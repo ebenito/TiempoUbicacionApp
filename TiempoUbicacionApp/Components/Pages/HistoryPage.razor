@@ -1,0 +1,27 @@
+﻿@page "/history"
+@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@inject LocationDatabaseService DatabaseService
+
+<h2>Histórico</h2>
+@if (entries == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <ul>
+        @foreach (var entry in entries)
+        {
+            <li>@entry.Date: @entry.Location - (@entry.Latitude, @entry.Longitude)</li>
+        }
+    </ul>
+}
+
+@code {
+    List<LocationEntry> entries;
+    protected override async Task OnInitializedAsync()
+    {
+        entries = await DatabaseService.GetAllEntriesAsync();
+    }
+}

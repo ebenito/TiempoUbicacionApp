@@ -1,0 +1,25 @@
+# Directorios temporales
+[Dd]ebug/
+[Rr]elease/
+bin/
+obj/
+
+# Archivos binarios
+*.exe
+*.dll
+*.pdb
+
+# Archivos de configuración
+*.user
+*.suo
+*.csproj.user
+*.vspscc
+
+# Archivos de la solución
+*.sdf
+*.db
+*.sqlite
+
+# Archivos de Visual Studio
+.vs/
+.vscode/

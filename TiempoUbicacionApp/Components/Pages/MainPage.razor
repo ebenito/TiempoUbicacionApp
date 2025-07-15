@@ -1,0 +1,105 @@
+﻿@page "/"
+@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@inject IJSRuntime JS
+@inject GeolocationService GeolocationService
+@inject LocationDatabaseService DatabaseService
+
+<PageTitle>Inicio</PageTitle>
+
+<div class="p-4">
+    <h1 class="text-xl font-bold">Información actual</h1>
+
+    <p><b>Fecha:</b> @currentDate.ToString("D")</p>
+    <p><b>Hora local:</b> @localTime.ToString("HH:mm:ss")</p>
+    <p><b>Hora UTC:</b> @utcTime.ToString("HH:mm:ss") (Desfase: @offset)</p>
+    <p><b>Periodo horario:</b> @timePeriod</p>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="text-red-500">Error: @errorMessage</div>
+    }
+    else if (isLoading)
+    {
+        <p>Cargando...</p>
+    }
+    else
+    {
+        @if (locationName != null)
+        {
+            <p><b>Ubicación:</b> @locationName</p>
+            <p><b>Latitud:</b> @formattedLatitude</p>
+            <p><b>Longitud:</b> @formattedLongitude</p>
+
+            <iframe src="@mapUrl" width="100%" height="200" style="border:0;" loading="lazy"></iframe>
+        }
+    }
+    
+
+    <div class="mt-4 flex flex-col gap-2">
+        <button class="btn" @onclick="SaveData">Guardar</button>
+        <button class="btn" @onclick="ShareData">Compartir</button>
+    </div>
+</div>
+
+@code {
+    DateTime currentDate = DateTime.Now;
+    DateTime localTime = DateTime.Now;
+    DateTime utcTime = DateTime.UtcNow;
+    string offset = TimeZoneInfo.Local.BaseUtcOffset.ToString();
+    string timePeriod = TimeZoneInfo.Local.IsDaylightSavingTime(DateTime.Now) ? "Ahorro de luz diurna" : "Hora estándar";
+
+    string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;
+
+    string errorMessage = string.Empty;
+    bool isLoading = true;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+        if (status != PermissionStatus.Granted)
+        {
+            throw new Exception("Permiso de ubicación denegado");
+        }
+
+        try
+        {
+            var location = await GeolocationService.GetCurrentLocationAsync();
+
+            if (location.Name != null)
+            {
+                locationName = location.Name;
+                formattedLatitude = location.FormattedLatitude;
+                formattedLongitude = location.FormattedLongitude;
+                mapUrl = $"https://maps.google.com/maps?q={location.Lat},{location.Lng}&z=15&output=embed";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async Task SaveData()
+    {
+        await DatabaseService.SaveEntryAsync(new LocationEntry
+        {
+            Date = DateTime.Now,
+            Location = locationName,
+            Latitude = formattedLatitude,
+            Longitude = formattedLongitude
+        });
+    }
+
+    async Task ShareData()
+    {
+        string text = $"📅 Fecha: {currentDate:D}\n🕒 Hora local: {localTime:HH:mm:ss}\n🌍 Hora UTC: {utcTime:HH:mm:ss} (Desfase: {offset})\n🕓 Periodo: {timePeriod}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+        await JS.InvokeVoidAsync("navigator.share", new { title = "Mi ubicación", text });
+    }
+}

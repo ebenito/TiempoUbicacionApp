@@ -11,7 +11,7 @@ App MAUI + Blazor para Android que muestra:
 - Menú con Histórico y Acerca de
 
 ## Requisitos
-- Visual Studio 2022/2024 con cargas de trabajo .NET MAUI
+- Visual Studio 2022 con cargas de trabajo .NET MAUI
 - SDK .NET 8.0
 - Emulador o dispositivo Android
 
