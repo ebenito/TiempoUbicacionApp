@@ -1,23 +1,26 @@
 ﻿@page "/"
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
+@using CommunityToolkit.Maui.Alerts
 @inject IJSRuntime JS
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
 
-<PageTitle>Inicio</PageTitle>
 
 <div class="p-4">
     <h1 class="text-xl font-bold">Información actual</h1>
 
     <p><b>Fecha:</b> @currentDate.ToString("D")</p>
     <p><b>Hora local:</b> @localTime.ToString("HH:mm:ss")</p>
-    <p><b>Hora UTC:</b> @utcTime.ToString("HH:mm:ss") (Desfase: @offset)</p>
+    <p><b>Hora UTC:</b> @utcTime.ToString("HH:mm:ss") (Desfase: @offsetFormatted)</p>
     <p><b>Periodo horario:</b> @timePeriod</p>
+    <hr />
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div class="text-red-500">Error: @errorMessage</div>
+        <div style="background-color:#fdecea; padding:10px; color:#c0392b; border-radius:8px;">
+            ⚠️ @errorMessage
+        </div>
     }
     else if (isLoading)
     {
@@ -31,11 +34,12 @@
             <p><b>Latitud:</b> @formattedLatitude</p>
             <p><b>Longitud:</b> @formattedLongitude</p>
 
-            <iframe src="@mapUrl" width="100%" height="200" style="border:0;" loading="lazy"></iframe>
+            <iframe src="@mapUrl" width="100" height="200" style="border:0;" loading="lazy"></iframe>
         }
     }
-    
 
+
+    <hr />
     <div class="mt-4 flex flex-col gap-2">
         <button class="btn" @onclick="SaveData">Guardar</button>
         <button class="btn" @onclick="ShareData">Compartir</button>
@@ -46,7 +50,9 @@
     DateTime currentDate = DateTime.Now;
     DateTime localTime = DateTime.Now;
     DateTime utcTime = DateTime.UtcNow;
-    string offset = TimeZoneInfo.Local.BaseUtcOffset.ToString();
+    // string offset = TimeZoneInfo.Local.BaseUtcOffset.ToString();
+    string offsetFormatted = "??";
+
     string timePeriod = TimeZoneInfo.Local.IsDaylightSavingTime(DateTime.Now) ? "Ahorro de luz diurna" : "Hora estándar";
 
     string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;
@@ -57,15 +63,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-
-        var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-        if (status != PermissionStatus.Granted)
-        {
-            throw new Exception("Permiso de ubicación denegado");
-        }
-
         try
-        {
+        {         
+            var offset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
+            offsetFormatted = offset >= TimeSpan.Zero
+                ? $"+{offset:hh\\:mm}"
+                : $"-{offset:hh\\:mm}";
+
+            CheckPermisosUbicacion();
             var location = await GeolocationService.GetCurrentLocationAsync();
 
             if (location.Name != null)
@@ -78,13 +83,50 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = "Error" + ex.Message;
+            #if ANDROID
+                await Toast.Make(errorMessage).Show();
+            #else
+                await Application.Current.MainPage.DisplayAlert("Error detectado", errorMessage, "OK");
+            #endif
         }
         finally
         {
             isLoading = false;
         }
     }
+
+    private async Task CheckPermisosUbicacion()
+    {
+        try
+        {
+            var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                // throw new Exception("Permiso de ubicación denegado");
+                //await Toast.Make("Permiso de ubicación denegado").Show();
+                errorMessage = "No se concedió el permiso de ubicación; habilitelo en la configuración.";
+
+                #if ANDROID
+                    await Toast.Make(errorMessage).Show();
+                #else
+                    await Application.Current.MainPage.DisplayAlert("Permiso requerido", errorMessage, "OK");
+                #endif
+
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error de permisos: " + ex.Message;
+            #if ANDROID
+                await Toast.Make(errorMessage).Show();
+            #else
+                await Application.Current.MainPage.DisplayAlert("Error detectado", errorMessage, "OK");
+            #endif
+        }
+    }
+
 
     async Task SaveData()
     {
@@ -97,9 +139,36 @@
         });
     }
 
+
     async Task ShareData()
-    {
-        string text = $"📅 Fecha: {currentDate:D}\n🕒 Hora local: {localTime:HH:mm:ss}\n🌍 Hora UTC: {utcTime:HH:mm:ss} (Desfase: {offset})\n🕓 Periodo: {timePeriod}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
-        await JS.InvokeVoidAsync("navigator.share", new { title = "Mi ubicación", text });
+    { 
+        string text = $"📅 Fecha: {currentDate:D}\n🕒 Hora local: {localTime:HH:mm:ss}\n🌍 Hora UTC: {utcTime:HH:mm:ss} (Desfase: {offsetFormatted})\n🕓 Periodo: {timePeriod}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+
+        try
+        {
+            var canShare = await JS.InvokeAsync<bool>("canShare");
+
+            if (!canShare)
+            {
+                Console.WriteLine("navigator.share no está disponible.");
+                return;
+            }
+
+           
+            await JS.InvokeVoidAsync("invokeShare", new
+            {
+                title = "Mis datos de ubicación y tiempo",
+                text
+            });
+        }
+        catch (JSException jsEx)
+        {
+            Console.WriteLine($"Error al compartir: {jsEx.Message}");
+
+            await JS.InvokeVoidAsync("copyToClipboard", text);
+            await Application.Current.MainPage.DisplayAlert("Compartir datos", "Se han copiado los datos al portapapeles; ahora puede pegarlos en dónde los necesite.", "OK");
+        }
     }
+
+
 }

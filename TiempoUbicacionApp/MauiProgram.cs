@@ -17,7 +17,9 @@ namespace TiempoUbicacionApp
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-            builder.Services.AddMauiBlazorWebView(); 
+            builder.Services.AddMauiBlazorWebView();
+
+            builder.Services.AddSingleton<LocationDatabaseService>();
             builder.Services.AddSingleton<GeolocationService>();
 
 
