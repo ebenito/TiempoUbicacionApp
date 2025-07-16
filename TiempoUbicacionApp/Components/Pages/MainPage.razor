@@ -6,17 +6,37 @@
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
 
+<style>
+    .card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin: 15px 0;
+    }
 
-<div class="p-4">
-    <h1 class="text-xl font-bold">Información actual</h1>
+    .title {
+        font-size: 1.4em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
 
-    <p><b>Fecha:</b> @currentDate.ToString("D")</p>
-    <p><b>Hora local:</b> @localTime.ToString("HH:mm:ss")</p>
-    <p><b>Hora UTC:</b> @utcTime.ToString("HH:mm:ss") (Desfase: @offsetFormatted)</p>
-    <p><b>Periodo horario:</b> @timePeriod</p>
-    <hr />
+    .value {
+        font-size: 1.2em;
+        color: #34495e;
+    }
+</style>
 
-    @if (!string.IsNullOrEmpty(errorMessage))
+<div class="card">
+    <div class="title">Fecha y hora</div>
+    <div class="value">📅 Fecha: @fechaActual</div>
+    <div class="value">🕒 Hora Local: @horaLocal</div>
+    <div class="value">🌍 Hora UTC: @horaUtc  (Desfase: @offsetFormatted)</div>
+    <div class="value">⏱ Horario: @tipoHorario</div>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
     {
         <div style="background-color:#fdecea; padding:10px; color:#c0392b; border-radius:8px;">
             ⚠️ @errorMessage
@@ -28,48 +48,77 @@
     }
     else
     {
-        @if (locationName != null)
-        {
-            <p><b>Ubicación:</b> @locationName</p>
-            <p><b>Latitud:</b> @formattedLatitude</p>
-            <p><b>Longitud:</b> @formattedLongitude</p>
+        <div class="card">
+            <div class="title">Ubicación actual:</div>
+            <div class="value">@locationName</div>
+            <div class="value">Latitud: @formattedLatitude</div>
+            <div class="value">Longitud: @formattedLongitude</div>
 
-            <iframe src="@mapUrl" width="100" height="200" style="border:0;" loading="lazy"></iframe>
-        }
+            @if (!string.IsNullOrWhiteSpace(mapUrl))
+            {
+                <div style="margin-top:10px">
+                    <iframe width="100" height="250" frameborder="0" style="border-radius:12px"
+                            src="@mapUrl" allowfullscreen></iframe>
+                </div>
+            }
+        </div>
     }
 
-
-    <hr />
-    <div class="mt-4 flex flex-col gap-2">
-        <button class="btn" @onclick="SaveData">Guardar</button>
-        <button class="btn" @onclick="ShareData">Compartir</button>
-    </div>
+<hr />
+<div class="mt-4 flex flex-col gap-2">
+    <button class="btn" @onclick="SaveData">Guardar</button>
+    <button class="btn" @onclick="ShareData">Compartir</button>
 </div>
 
+
+
 @code {
-    DateTime currentDate = DateTime.Now;
-    DateTime localTime = DateTime.Now;
-    DateTime utcTime = DateTime.UtcNow;
-    // string offset = TimeZoneInfo.Local.BaseUtcOffset.ToString();
-    string offsetFormatted = "??";
-
-    string timePeriod = TimeZoneInfo.Local.IsDaylightSavingTime(DateTime.Now) ? "Ahorro de luz diurna" : "Hora estándar";
-
     string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;
 
     string errorMessage = string.Empty;
     bool isLoading = true;
 
+    private string horaLocal = string.Empty;
+    private string horaUtc = string.Empty;
+    private string fechaActual = string.Empty;
+    private string offsetFormatted = string.Empty;
+    private string tipoHorario = string.Empty;
+
+    private System.Threading.Timer timer; 
+
+    protected override void OnInitialized()
+    {
+        timer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);
+    }
+
+    public void Dispose()
+    {
+        timer?.Change(Timeout.Infinite, Timeout.Infinite);
+        timer?.Dispose();
+    }
+
+    private async Task ActualizarDatosAsync()
+    {
+        var now = DateTime.Now;
+        var utcNow = DateTime.UtcNow;
+        var offset = TimeZoneInfo.Local.GetUtcOffset(now);
+
+        horaLocal = now.ToString("HH:mm:ss");
+        horaUtc = utcNow.ToString("HH:mm:ss");
+        fechaActual = now.ToString("dddd, dd MMMM yyyy");
+        offsetFormatted = offset >= TimeSpan.Zero ? $"+{offset:hh\\:mm}" : $"-{offset:hh\\:mm}";
+        tipoHorario = TimeZoneInfo.Local.IsDaylightSavingTime(now) ? "Horario de verano" : "Horario estándar";
+
+        // Invoca renderizado en el hilo principal
+        await InvokeAsync(StateHasChanged);
+    }
+
+
 
     protected override async Task OnInitializedAsync()
     {
         try
-        {         
-            var offset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
-            offsetFormatted = offset >= TimeSpan.Zero
-                ? $"+{offset:hh\\:mm}"
-                : $"-{offset:hh\\:mm}";
-
+        {   
             CheckPermisosUbicacion();
             var location = await GeolocationService.GetCurrentLocationAsync();
 
@@ -83,7 +132,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = "Error" + ex.Message;
+            errorMessage = "Error: " + ex.Message;
             #if ANDROID
                 await Toast.Make(errorMessage).Show();
             #else
@@ -142,7 +191,8 @@
 
     async Task ShareData()
     { 
-        string text = $"📅 Fecha: {currentDate:D}\n🕒 Hora local: {localTime:HH:mm:ss}\n🌍 Hora UTC: {utcTime:HH:mm:ss} (Desfase: {offsetFormatted})\n🕓 Periodo: {timePeriod}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+        //string text = $"📅 Fecha: {currentDate:D}\n🕒 Hora local: {localTime:HH:mm:ss}\n🌍 Hora UTC: {utcTime:HH:mm:ss} (Desfase: {offsetFormatted})\n🕓 Periodo: {timePeriod}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+        string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
 
         try
         {
