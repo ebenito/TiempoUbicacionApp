@@ -2,12 +2,13 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TiempoUbicacionApp"
-             xmlns:components="clr-namespace:TiempoUbicacionApp.Components"
-             x:Class="TiempoUbicacionApp.MainPage">
+             xmlns:sharedComponents="clr-namespace:TiempoUbicacion.Shared.Components;assembly=TiempoUbicacion.Shared"
+             x:Class="TiempoUbicacionApp.MainPage"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime">
 
     <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
         <BlazorWebView.RootComponents>
-            <RootComponent Selector="#app" ComponentType="{x:Type components:Routes}" />
+            <RootComponent Selector="#app" ComponentType="{x:Type sharedComponents:Routes}" />
         </BlazorWebView.RootComponents>
     </BlazorWebView>
 

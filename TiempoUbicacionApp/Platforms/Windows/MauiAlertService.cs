@@ -1,12 +1,26 @@
-﻿using System;
+﻿using CommunityToolkit.Maui.Alerts;
+using SQLite;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TiempoUbicacion.Shared.Models;
+using TiempoUbicacion.Shared.Services;
 
-namespace TiempoUbicacionApp.Services
+namespace TiempoUbicacionApp.Platforms
 {
-    public class GeolocationService
+    public class MauiAlertService : IAlertService
+    {
+        public async Task ShowToastAsync(string message)
+        {           
+            await Application.Current.MainPage.DisplayAlert("Tiempo / Ubicación", message, "OK");
+        }
+    }
+
+
+
+    public class MauiGeolocationService : IGeolocationService
     {
         public async Task<(string Name, string FormattedLatitude, string FormattedLongitude, double Lat, double Lng)> GetCurrentLocationAsync()
         {
@@ -33,6 +47,30 @@ namespace TiempoUbicacionApp.Services
             int min = (int)((coord - deg) * 60);
             int sec = (int)((coord - deg - min / 60.0) * 3600);
             return $"{deg}º {min}' {sec}'' {dir}";
+        }
+    }
+
+
+
+    public class MauiLocationDatabaseService : ILocationDatabaseService
+    {
+        private SQLiteAsyncConnection _db;
+        public async Task InitAsync()
+        {
+            if (_db != null) return;
+            var path = Path.Combine(FileSystem.AppDataDirectory, "locations.db");
+            _db = new SQLiteAsyncConnection(path);
+            await _db.CreateTableAsync<LocationEntry>();
+        }
+
+        public Task SaveEntryAsync(LocationEntry entry)
+        {
+            return _db.InsertAsync(entry);
+        }
+
+        public Task<List<LocationEntry>> GetAllEntriesAsync()
+        {
+            return _db.Table<LocationEntry>().ToListAsync();
         }
     }
 

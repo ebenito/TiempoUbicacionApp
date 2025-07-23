@@ -1,7 +1,7 @@
 ﻿@page "/history"
-@using TiempoUbicacionApp.Models
-@using TiempoUbicacionApp.Services
-@inject LocationDatabaseService DatabaseService
+@using TiempoUbicacion.Shared.Models
+@using TiempoUbicacion.Shared.Services
+@inject ILocationDatabaseService DatabaseService
 
 <h2>Histórico</h2>
 @if (entries == null)

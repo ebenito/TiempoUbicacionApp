@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
-using TiempoUbicacionApp.Services;
+using TiempoUbicacionApp.Platforms;
+using TiempoUbicacion.Shared.Services;
 
 namespace TiempoUbicacionApp
 {
@@ -19,13 +20,14 @@ namespace TiempoUbicacionApp
 
             builder.Services.AddMauiBlazorWebView();
 
-            builder.Services.AddSingleton<LocationDatabaseService>();
-            builder.Services.AddSingleton<GeolocationService>();
-
+            // Registro de servicios concretos para interfaces compartidas
+            builder.Services.AddSingleton<IAlertService, MauiAlertService>();
+            builder.Services.AddSingleton<IGeolocationService, MauiGeolocationService>();   
+            builder.Services.AddSingleton<ILocationDatabaseService, MauiLocationDatabaseService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();

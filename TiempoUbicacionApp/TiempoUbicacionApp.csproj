@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
-
+	
     <PropertyGroup>
         <TargetFrameworks>net9.0-android;</TargetFrameworks>
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+		
         <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
         <!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
 
@@ -36,10 +37,14 @@
 
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">28.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+    </PropertyGroup>
+	
+    <PropertyGroup>
+      <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.26100.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -61,11 +66,37 @@
     </ItemGroup>
 
     <ItemGroup>
+      <AndroidResource Remove="Components\**" />
+      <AndroidResource Remove="Models\**" />
+      <AndroidResource Remove="Services\**" />
+      <Compile Remove="Components\**" />
+      <Compile Remove="Models\**" />
+      <Compile Remove="Services\**" />
+      <Content Remove="Components\**" />
+      <Content Remove="Models\**" />
+      <Content Remove="Services\**" />
+      <EmbeddedResource Remove="Components\**" />
+      <EmbeddedResource Remove="Models\**" />
+      <EmbeddedResource Remove="Services\**" />
+      <MauiXaml Remove="Components\**" />
+      <MauiXaml Remove="Models\**" />
+      <MauiXaml Remove="Services\**" />
+      <None Remove="Components\**" />
+      <None Remove="Models\**" />
+      <None Remove="Services\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CommunityToolkit.Maui" Version="12.1.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.82" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.82" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.90" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.90" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.7" />
+        <PackageReference Include="Microsoft.Maui.Essentials" Version="9.0.90" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\TiempoUbicacion.Shared\TiempoUbicacion.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
