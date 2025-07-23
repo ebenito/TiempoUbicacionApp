@@ -140,19 +140,29 @@
     {
         // Este método debe ser implementado en el servicio de plataforma
         // Aquí solo se llama al servicio de alerta si hay error
-        // Si necesitas lógica de permisos, debe ir en el servicio de plataforma
         await Task.CompletedTask;
     }
 
-    async Task SaveData()
-    {
-        await DatabaseService.SaveEntryAsync(new LocationEntry
-        {
-            Date = DateTime.Now,
-            Location = locationName,
-            Latitude = formattedLatitude,
-            Longitude = formattedLongitude
-        });
+
+    @code {  
+
+        async Task SaveData()  
+        {  
+            await DatabaseService.SaveEntryAsync(new LocationEntry  
+            {  
+                Date = DateTime.Now,  
+                horaLocal = horaLocal,
+                horaUtc = horaUtc,
+                fechaActual = fechaActual,
+                desfase = offsetFormatted,
+                tipoHorario = tipoHorario,
+                Location = locationName,  
+                Latitude = formattedLatitude,  
+                Longitude = formattedLongitude  
+            });  
+            
+            await AlertService.ShowToastAsync("Datos guardados correctamente"); 
+        }  
     }
 
     async Task ShareData()

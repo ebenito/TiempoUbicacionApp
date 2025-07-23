@@ -1,3 +1,84 @@
 ﻿@inherits LayoutComponentBase
 
-@Body
+@code {
+    private bool menuVisible = false;
+    private string ToggleIcon => menuVisible ? "✖️" : "☰";
+    private void ToggleMenu() => menuVisible = !menuVisible;
+}
+
+<div class="layout-container">
+    <!-- Botón hamburguesa -->
+    <button class="hamburger-btn" @onclick="ToggleMenu">@ToggleIcon</button>
+
+    <!-- Menú lateral -->
+    @if (menuVisible)
+    {
+        <nav class="sidebar">
+            <ul>
+                <li><NavLink href="/" Match="NavLinkMatch.All">🏠 Inicio</NavLink></li>
+                <li><NavLink href="/history">📜 Historial</NavLink></li>
+                <li><NavLink href="/about">ℹ️ Acerca de</NavLink></li>
+            </ul>
+        </nav>
+    }
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        @Body
+    </main>
+</div>
+
+<style>
+    .layout-container {
+        display: flex;
+        flex-direction: row;
+        height: 100vh;
+        position: relative;
+    }
+
+    .hamburger-btn {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        font-size: 24px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+    }
+
+    .sidebar {
+        width: 220px;
+        background-color: #2c3e50;
+        color: white;
+        padding: 20px;
+        height: 100vh;
+    }
+
+        .sidebar ul {
+            margin-top: 50px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 1rem;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+            .sidebar a.active {
+                text-decoration: underline;
+            }
+
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow: auto;
+        margin-left: 50px;
+    }
+</style>
