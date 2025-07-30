@@ -3,8 +3,10 @@
 @using TiempoUbicacionApp.Services
 @using CommunityToolkit.Maui.Alerts
 @inject IJSRuntime JS
+@inject IAlertService AlertService
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
+
 
 <style>
     .card {
@@ -70,8 +72,6 @@
     <button class="btn" @onclick="ShareData">Compartir</button>
 </div>
 
-
-
 @code {
     string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;
 
@@ -109,17 +109,14 @@
         offsetFormatted = offset >= TimeSpan.Zero ? $"+{offset:hh\\:mm}" : $"-{offset:hh\\:mm}";
         tipoHorario = TimeZoneInfo.Local.IsDaylightSavingTime(now) ? "Horario de verano" : "Horario estándar";
 
-        // Invoca renderizado en el hilo principal
         await InvokeAsync(StateHasChanged);
     }
-
-
 
     protected override async Task OnInitializedAsync()
     {
         try
         {   
-            CheckPermisosUbicacion();
+            await CheckPermisosUbicacion();
             var location = await GeolocationService.GetCurrentLocationAsync();
 
             if (location.Name != null)
@@ -133,11 +130,7 @@
         catch (Exception ex)
         {
             errorMessage = "Error: " + ex.Message;
-            #if ANDROID
-                await Toast.Make(errorMessage).Show();
-            #else
-                await Application.Current.MainPage.DisplayAlert("Error detectado", errorMessage, "OK");
-            #endif
+            await AlertService.ShowToastAsync(errorMessage);
         }
         finally
         {
@@ -147,51 +140,35 @@
 
     private async Task CheckPermisosUbicacion()
     {
-        try
-        {
-            var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-            if (status != PermissionStatus.Granted)
-            {
-                // throw new Exception("Permiso de ubicación denegado");
-                //await Toast.Make("Permiso de ubicación denegado").Show();
-                errorMessage = "No se concedió el permiso de ubicación; habilitelo en la configuración.";
-
-                #if ANDROID
-                    await Toast.Make(errorMessage).Show();
-                #else
-                    await Application.Current.MainPage.DisplayAlert("Permiso requerido", errorMessage, "OK");
-                #endif
-
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = "Error de permisos: " + ex.Message;
-            #if ANDROID
-                await Toast.Make(errorMessage).Show();
-            #else
-                await Application.Current.MainPage.DisplayAlert("Error detectado", errorMessage, "OK");
-            #endif
-        }
+        // Este método debe ser implementado en el servicio de plataforma
+        // Aquí solo se llama al servicio de alerta si hay error
+        await Task.CompletedTask;
     }
 
 
-    async Task SaveData()
-    {
-        await DatabaseService.SaveEntryAsync(new LocationEntry
-        {
-            Date = DateTime.Now,
-            Location = locationName,
-            Latitude = formattedLatitude,
-            Longitude = formattedLongitude
-        });
-    }
+    @code {  
 
+        async Task SaveData()  
+        {  
+            await DatabaseService.SaveEntryAsync(new LocationEntry  
+            {  
+                Date = DateTime.Now,  
+                horaLocal = horaLocal,
+                horaUtc = horaUtc,
+                fechaActual = fechaActual,
+                desfase = offsetFormatted,
+                tipoHorario = tipoHorario,
+                Location = locationName,  
+                Latitude = formattedLatitude,  
+                Longitude = formattedLongitude  
+            });  
+            
+            await AlertService.ShowToastAsync("Datos guardados correctamente"); 
+        }  
+    }
 
     async Task ShareData()
     { 
-        //string text = $"📅 Fecha: {currentDate:D}\n🕒 Hora local: {localTime:HH:mm:ss}\n🌍 Hora UTC: {utcTime:HH:mm:ss} (Desfase: {offsetFormatted})\n🕓 Periodo: {timePeriod}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
         string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
 
         try
@@ -200,11 +177,10 @@
 
             if (!canShare)
             {
-                Console.WriteLine("navigator.share no está disponible.");
+                await AlertService.ShowToastAsync("navigator.share no está disponible.");
                 return;
             }
 
-           
             await JS.InvokeVoidAsync("invokeShare", new
             {
                 title = "Mis datos de ubicación y tiempo",
@@ -213,12 +189,8 @@
         }
         catch (JSException jsEx)
         {
-            Console.WriteLine($"Error al compartir: {jsEx.Message}");
-
             await JS.InvokeVoidAsync("copyToClipboard", text);
-            await Application.Current.MainPage.DisplayAlert("Compartir datos", "Se han copiado los datos al portapapeles; ahora puede pegarlos en dónde los necesite.", "OK");
+            await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles; ahora puede pegarlos en dónde los necesite.");
         }
     }
-
-
 }

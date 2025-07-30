@@ -1,6 +1,14 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 using TiempoUbicacionApp.Services;
+
+#if ANDROID
+using TiempoUbicacionApp.Platforms.Android;
+#elif WINDOWS
+using TiempoUbicacionApp.Platforms.Windows;
+#endif
+
 
 namespace TiempoUbicacionApp
 {
@@ -18,7 +26,9 @@ namespace TiempoUbicacionApp
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddMudServices();
 
+            IServiceCollection serviceCollection = builder.Services.AddSingleton<IAlertService, MauiAlertService>();
             builder.Services.AddSingleton<LocationDatabaseService>();
             builder.Services.AddSingleton<GeolocationService>();
 

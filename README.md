@@ -18,6 +18,6 @@ App MAUI + Blazor para Windows y Android que muestra:
 ## Instalación
 1. Clona el repositorio:
    ```bash
-   git clone https://github.com/TuUsuario/TiempoUbicacionApp.git
+   git clone https://github.com/ebenito/TiempoUbicacionApp.git
    cd TiempoUbicacionApp
 

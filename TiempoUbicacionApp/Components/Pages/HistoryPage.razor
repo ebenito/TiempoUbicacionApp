@@ -3,25 +3,61 @@
 @using TiempoUbicacionApp.Services
 @inject LocationDatabaseService DatabaseService
 
-<h2>Histórico</h2>
+<h2>📜 Historial de registros</h2>
+
 @if (entries == null)
 {
-    <p>Cargando...</p>
+    <p>Cargando registros...</p>
+}
+else if (!entries.Any())
+{
+    <p>No hay registros guardados.</p>
 }
 else
 {
-    <ul>
+    <div class="history-list">
         @foreach (var entry in entries)
         {
-            <li>@entry.Date: @entry.Location - (@entry.Latitude, @entry.Longitude)</li>
+            <div class="entry-card">
+                <h4>@entry.fechaActual — @entry.horaLocal (@entry.tipoHorario)</h4>
+                <p><strong>UTC:</strong> @entry.horaUtc</p>
+                <p><strong>Desfase:</strong> @entry.desfase</p>
+                <p><strong>Ubicación:</strong> @entry.Location</p>
+                <p><strong>Coordenadas:</strong> @entry.Latitude, @entry.Longitude</p>
+            </div>
         }
-    </ul>
+    </div>
 }
 
 @code {
-    List<LocationEntry> entries;
+    private List<LocationEntry> entries;
+
     protected override async Task OnInitializedAsync()
     {
         entries = await DatabaseService.GetAllEntriesAsync();
     }
 }
+
+<style>
+    .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .entry-card {
+        background-color: #f5f5f5;
+        border-left: 6px solid #3498db;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+        .entry-card h4 {
+            margin: 0 0 8px 0;
+        }
+
+        .entry-card p {
+            margin: 4px 0;
+        }
+</style>
