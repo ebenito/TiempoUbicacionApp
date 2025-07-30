@@ -28,7 +28,8 @@ namespace TiempoUbicacionApp
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
 
-            IServiceCollection serviceCollection = builder.Services.AddSingleton<IAlertService, MauiAlertService>();
+            builder.Services.AddPlatformServices();
+
             builder.Services.AddSingleton<LocationDatabaseService>();
             builder.Services.AddSingleton<GeolocationService>();
 

@@ -31,7 +31,7 @@ namespace TiempoUbicacionApp.Services
 
         public Task<List<LocationEntry>> GetAllEntriesAsync()
         {
-            return _db.Table<LocationEntry>().ToListAsync();
+            return _db.Table<LocationEntry>().OrderByDescending(c => c.Id).ToListAsync();
         }
     }
 

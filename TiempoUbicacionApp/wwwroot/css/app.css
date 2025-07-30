@@ -71,6 +71,12 @@ h1:focus {
     display: none;
 }
 
+.mud-theme-primary {
+    background-color: #f0f4f8; /* azul grisáceo claro */
+    color: #2c3e50;
+}
+
+
 @supports (-webkit-touch-callout: none) {
     .status-bar-safe-area {
         display: flex;
