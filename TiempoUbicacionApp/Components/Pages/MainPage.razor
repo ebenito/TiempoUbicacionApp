@@ -8,69 +8,59 @@
 @inject LocationDatabaseService DatabaseService
 
 
-<style>
-    .card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        margin: 15px 0;
-    }
 
-    .title {
-        font-size: 1.4em;
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #2c3e50;
-    }
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
 
-    .value {
-        font-size: 1.2em;
-        color: #34495e;
-    }
-</style>
+    <MudCard Class="mb-4">
+        <MudCardContent>
+            <MudText Typo="Typo.h6" Color="Color.Primary">Datos de fecha y hora</MudText>
+            <MudText>📅 Fecha: @fechaActual</MudText>
+            <MudText>🕒 Hora Local: @horaLocal</MudText>
+            <MudText>🌍 Hora UTC: @horaUtc (Desfase: @offsetFormatted)</MudText>
+            <MudText>⏱ Horario: @tipoHorario</MudText>
+        </MudCardContent>
+    </MudCard>
 
-<div class="card">
-    <div class="title">Fecha y hora</div>
-    <div class="value">📅 Fecha: @fechaActual</div>
-    <div class="value">🕒 Hora Local: @horaLocal</div>
-    <div class="value">🌍 Hora UTC: @horaUtc  (Desfase: @offsetFormatted)</div>
-    <div class="value">⏱ Horario: @tipoHorario</div>
-</div>
-
-@if (!string.IsNullOrEmpty(errorMessage))
+    @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div style="background-color:#fdecea; padding:10px; color:#c0392b; border-radius:8px;">
+        <MudAlert Severity="Severity.Error" Elevation="1" Dense="true">
             ⚠️ @errorMessage
-        </div>
+        </MudAlert>
     }
     else if (isLoading)
     {
-        <p>Cargando...</p>
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
     }
     else
     {
-        <div class="card">
-            <div class="title">Ubicación actual:</div>
-            <div class="value">@locationName</div>
-            <div class="value">Latitud: @formattedLatitude</div>
-            <div class="value">Longitud: @formattedLongitude</div>
+        <MudCard Class="mb-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" Color="Color.Primary">📍 Ubicación actual</MudText>
+                <MudText>@locationName</MudText>
+                <MudText>Latitud: @formattedLatitude</MudText>
+                <MudText>Longitud: @formattedLongitude</MudText>
 
-            @if (!string.IsNullOrWhiteSpace(mapUrl))
-            {
-                <div style="margin-top:10px">
-                    <iframe width="100" height="250" frameborder="0" style="border-radius:12px"
-                            src="@mapUrl" allowfullscreen></iframe>
-                </div>
-            }
-        </div>
+                @if (!string.IsNullOrWhiteSpace(mapUrl))
+                {
+                    <MudPaper Class="mt-3" Style="overflow:hidden; border-radius:12px;">
+                        <iframe width="100%" height="250" frameborder="0" src="@mapUrl" allowfullscreen></iframe>
+                    </MudPaper>
+                }
+            </MudCardContent>
+        </MudCard>
     }
 
-<hr />
-<div class="mt-4 flex flex-col gap-2">
-    <button class="btn" @onclick="SaveData">Guardar</button>
-    <button class="btn" @onclick="ShareData">Compartir</button>
-</div>
+    <MudGrid Class="mt-4" GutterSize="3">
+        <MudItem xs="12" sm="6">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth OnClick="SaveData">Guardar</MudButton>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" FullWidth OnClick="ShareData">Compartir</MudButton>
+        </MudItem>
+    </MudGrid>
+
+</MudContainer>
+
 
 @code {
     string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;

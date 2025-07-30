@@ -3,31 +3,38 @@
 @using TiempoUbicacionApp.Services
 @inject LocationDatabaseService DatabaseService
 
-<h2>📜 Historial de registros</h2>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
 
-@if (entries == null)
-{
-    <p>Cargando registros...</p>
-}
-else if (!entries.Any())
-{
-    <p>No hay registros guardados.</p>
-}
-else
-{
-    <div class="history-list">
-        @foreach (var entry in entries)
-        {
-            <div class="entry-card">
-                <h4>@entry.fechaActual — @entry.horaLocal (@entry.tipoHorario)</h4>
-                <p><strong>UTC:</strong> @entry.horaUtc</p>
-                <p><strong>Desfase:</strong> @entry.desfase</p>
-                <p><strong>Ubicación:</strong> @entry.Location</p>
-                <p><strong>Coordenadas:</strong> @entry.Latitude, @entry.Longitude</p>
-            </div>
-        }
-    </div>
-}
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">📜 Historial de registros</MudText>
+
+    @if (entries == null)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+    }
+    else if (!entries.Any())
+    {
+        <MudAlert Severity="Severity.Info" Elevation="1">No hay registros guardados.</MudAlert>
+    }
+    else
+    {
+        <MudGrid GutterSize="3">
+            @foreach (var entry in entries)
+            {
+                <MudItem xs="12">
+                    <MudPaper Class="p-4 entry-card" Elevation="1" Style="background-color: #f0f4f8;">
+                        <MudText Typo="Typo.h6" Color="Color.Secondary" Style="background-color: #B0BEC5;">@entry.fechaActual — @entry.horaLocal (@entry.tipoHorario)</MudText>
+                        <MudDivider Class="my-2" />
+                        <MudText><strong>UTC:</strong> @entry.horaUtc</MudText>
+                        <MudText><strong>Desfase:</strong> @entry.desfase</MudText>
+                        <MudText><strong>Ubicación:</strong> @entry.Location</MudText>
+                        <MudText><strong>Coordenadas:</strong> @entry.Latitude, @entry.Longitude</MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+</MudContainer>
 
 @code {
     private List<LocationEntry> entries;
@@ -37,27 +44,3 @@ else
         entries = await DatabaseService.GetAllEntriesAsync();
     }
 }
-
-<style>
-    .history-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .entry-card {
-        background-color: #f5f5f5;
-        border-left: 6px solid #3498db;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-        .entry-card h4 {
-            margin: 0 0 8px 0;
-        }
-
-        .entry-card p {
-            margin: 4px 0;
-        }
-</style>

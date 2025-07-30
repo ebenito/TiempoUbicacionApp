@@ -1,7 +1,19 @@
 ﻿@page "/about"
 
-<h2>Acerca de</h2>
-<p><b>Versión:</b> 1.0.0</p>
-<p><b>Desarrollador:</b> Esteban Benito</p>
-<p><b>Email:</b> info@tubkala.com</p>
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
 
+    <MudCard Elevation="2" Class="p-4">
+        <MudCardHeader>
+            <MudText Typo="Typo.h5" Color="Color.Primary">ℹ️ Acerca de esta aplicación</MudText>
+        </MudCardHeader>
+
+        <MudDivider Class="my-2" />
+
+        <MudCardContent>
+            <MudText><strong>Versión:</strong> 1.0.0</MudText>
+            <MudText><strong>Desarrollador:</strong> Esteban Benito</MudText>
+            <MudText><strong>Email:</strong> info@tubkala.com</MudText>
+        </MudCardContent>
+    </MudCard>
+
+</MudContainer>
