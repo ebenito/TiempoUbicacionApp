@@ -26,12 +26,17 @@ namespace TiempoUbicacionApp
                 });
 
             builder.Services.AddMauiBlazorWebView();
+
+            builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
+            builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddMudServices();
+
 
             builder.Services.AddPlatformServices();
 
             builder.Services.AddSingleton<LocationDatabaseService>();
             builder.Services.AddSingleton<GeolocationService>();
+            builder.Services.AddSingleton<App>();
 
 
 #if DEBUG

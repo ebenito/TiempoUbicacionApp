@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using TiempoUbicacionApp.Services
+@inherits LayoutComponentBase
+@inject ThemeService ThemeService
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -23,16 +25,29 @@
         <MudNavMenu>
             <MudNavLink Href="/" Match="NavLinkMatch.All">🏠 Inicio</MudNavLink>
             <MudNavLink Href="/history">📜 Historial</MudNavLink>
+            <MudNavLink Href="/configuracion">⚙️ Configuración</MudNavLink>
             <MudNavLink Href="/about">ℹ️ Acerca de</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
     <!-- Contenido principal -->
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
-            @Body
-        </MudContainer>
-    </MudMainContent>
+    @if (!ThemeService.IsInitialized)
+    {
+        <div class="m-5">Cargando tema...</div>
+    }
+    else
+    {
+       @*  <MudThemeProvider Theme="@ThemeService.CurrentTheme">
+            <MudDialogProvider />
+            <MudSnackbarProvider />
+        </MudThemeProvider> *@
+
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    }
 
 </MudLayout>
 

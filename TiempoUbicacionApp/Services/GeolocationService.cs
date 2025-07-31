@@ -1,29 +1,58 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using TiempoUbicacionApp.Services;
+using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Devices;
+using Microsoft.Maui.ApplicationModel;
 
 namespace TiempoUbicacionApp.Services
 {
     public class GeolocationService
     {
+        private readonly IAlertService _alertService;
+
+        public GeolocationService(IAlertService alertService)
+        {
+            _alertService = alertService;
+        }
+
         public async Task<(string Name, string FormattedLatitude, string FormattedLongitude, double Lat, double Lng)> GetCurrentLocationAsync()
         {
-            var location = await Geolocation.Default.GetLastKnownLocationAsync();
-            if (location == null)
-                location = await Geolocation.Default.GetLocationAsync();
+            try
+            {
+                var location = await Geolocation.Default.GetLastKnownLocationAsync();
+                if (location == null)
+                    location = await Geolocation.Default.GetLocationAsync();
 
-            var placemark = (await Geocoding.Default.GetPlacemarksAsync(location.Latitude, location.Longitude)).FirstOrDefault();
+                if (location == null)
+                {
+                    await _alertService.ShowToastAsync("⚠️ No se pudo obtener la ubicación.");
+                    return default;
+                }
 
-            return (
-                Name: placemark?.Locality + " (" + placemark?.AdminArea + ")",
-                FormattedLatitude: ConvertToDMS(location.Latitude, true),
-                FormattedLongitude: ConvertToDMS(location.Longitude, false),
-                Lat: location.Latitude,
-                Lng: location.Longitude
-            );
+                var placemark = (await Geocoding.Default.GetPlacemarksAsync(location.Latitude, location.Longitude)).FirstOrDefault();
+
+                return (
+                    Name: placemark?.Locality + " (" + placemark?.AdminArea + ")",
+                    FormattedLatitude: ConvertToDMS(location.Latitude, true),
+                    FormattedLongitude: ConvertToDMS(location.Longitude, false),
+                    Lat: location.Latitude,
+                    Lng: location.Longitude
+                );
+            }
+            catch (PermissionException)
+            {
+                await _alertService.ShowToastAsync("⚠️ Permiso denegado para acceder a la ubicación.");
+                return default;
+            }
+            catch (Exception ex)
+            {
+                await _alertService.ShowToastAsync($"❌ Error al obtener ubicación: {ex.Message}");
+                return default;
+            }
         }
+
 
         private string ConvertToDMS(double coord, bool isLat)
         {

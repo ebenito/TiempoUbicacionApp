@@ -1,0 +1,67 @@
+﻿@page "/configuracion"
+@using TiempoUbicacionApp.Services
+@inject ThemeService ThemeService
+@inject ISettingsService SettingsService
+@inject IAlertService AlertService
+
+<MudPaper Class="p-4 mx-auto" MaxWidth="500px">
+    <MudText Typo="Typo.h5" Class="mb-4">Configuración de la App</MudText>
+
+    <MudSwitch T="bool"
+               @bind-Checked="_isDarkMode"
+               Label="Tema oscuro"
+               Color="Color.Primary"
+               Class="mb-4" />
+
+    <MudSelect T="int"
+               Label="Intervalo de actualización (segundos)"
+               @bind-Value="_refreshInterval"
+               Variant="Variant.Filled"
+               Class="mb-4">
+        <MudSelectItem Value="15">15 segundos</MudSelectItem>
+        <MudSelectItem Value="30">30 segundos</MudSelectItem>
+        <MudSelectItem Value="60">1 minuto</MudSelectItem>
+        <MudSelectItem Value="120">2 minutos</MudSelectItem>
+        <MudSelectItem Value="300">5 minutos</MudSelectItem>
+        <MudSelectItem Value="900">15 minutos</MudSelectItem>
+        <MudSelectItem Value="1800">30 minutos</MudSelectItem>
+        <MudSelectItem Value="3600">60 minutos</MudSelectItem>
+    </MudSelect>
+
+    <MudButton OnClick="GuardarConfiguracion"
+               Variant="Variant.Filled"
+               Color="Color.Primary">
+        Guardar configuración
+    </MudButton>
+</MudPaper>
+
+@code {
+    private bool _isDarkMode;
+    private int _refreshInterval;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isDarkMode = await SettingsService.GetIsDarkModeAsync();
+            _refreshInterval = await SettingsService.GetRefreshIntervalAsync();
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowToastAsync("Error al cargar configuración: " + ex.Message);
+        }
+    }
+
+    private async Task GuardarConfiguracion()
+    {
+        try
+        {
+            await SettingsService.SetRefreshIntervalAsync(_refreshInterval);
+            await ThemeService.SetDarkModeAsync(_isDarkMode);
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowToastAsync("Error al guardar configuración: " + ex.Message);
+        }
+    }
+}
