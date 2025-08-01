@@ -31,7 +31,6 @@ namespace TiempoUbicacionApp
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddMudServices();
 
-
             builder.Services.AddPlatformServices();
 
             builder.Services.AddSingleton<LocationDatabaseService>();

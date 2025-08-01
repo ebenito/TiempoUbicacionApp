@@ -8,7 +8,7 @@
     <MudText Typo="Typo.h5" Class="mb-4">Configuración de la App</MudText>
 
     <MudSwitch T="bool"
-               @bind-Checked="_isDarkMode"
+               @bind-Value="_isDarkMode"
                Label="Tema oscuro"
                Color="Color.Primary"
                Class="mb-4" />
@@ -57,7 +57,7 @@
         try
         {
             await SettingsService.SetRefreshIntervalAsync(_refreshInterval);
-            await ThemeService.SetDarkModeAsync(_isDarkMode);
+            ThemeService.SetDarkMode(_isDarkMode);
         }
         catch (Exception ex)
         {

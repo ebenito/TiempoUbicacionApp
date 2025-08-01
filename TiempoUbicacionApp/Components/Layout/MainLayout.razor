@@ -2,7 +2,7 @@
 @inherits LayoutComponentBase
 @inject ThemeService ThemeService
 
-<MudThemeProvider />
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -31,31 +31,41 @@
     </MudDrawer>
 
     <!-- Contenido principal -->
-    @if (!ThemeService.IsInitialized)
-    {
-        <div class="m-5">Cargando tema...</div>
-    }
-    else
-    {
-       @*  <MudThemeProvider Theme="@ThemeService.CurrentTheme">
-            <MudDialogProvider />
-            <MudSnackbarProvider />
-        </MudThemeProvider> *@
-
+   
         <MudMainContent>
             <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
                 @Body
             </MudContainer>
         </MudMainContent>
-    }
 
 </MudLayout>
 
 @code {
+    private MudTheme _theme;
+    private bool _isDarkMode;
     private bool _drawerOpen = false;
 
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
     }
+
+
+    protected override void OnInitialized()
+    {
+        // Cargar configuración inicial
+        _isDarkMode = ThemeService.IsDarkMode;
+        _theme = ThemeService.GetTheme();
+        ThemeService.OnChange += ThemeChanged;
+        base.OnInitialized();
+    }
+
+    private void ThemeChanged(bool isDark)
+    {
+        _isDarkMode = isDark;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => ThemeService.OnChange -= ThemeChanged;
+
 }

@@ -12,53 +12,57 @@ namespace TiempoUbicacionApp.Services
 
     public class ThemeService
     {
+        private readonly ISettingsService _settingsService;
         private bool _initialized = false;
         public bool IsInitialized => _initialized;
-
+        public event Action OnThemeChanged;
+        public event Action<bool> OnChange;
+        public MudTheme Theme { get; private set; }
         public bool IsDarkMode { get; private set; }
 
-        public MudTheme CurrentTheme => IsDarkMode ? DarkTheme : LightTheme;
-
-        public event Action OnThemeChanged;
-
-        private readonly ISettingsService _settingsService;
-
-        public ThemeService(ISettingsService settingsService)
+        public void SetDarkMode(bool isDark)
         {
-            _settingsService = settingsService;
+            IsDarkMode = isDark;
+            Theme = BuildTheme(isDark);
+            OnChange?.Invoke(isDark);
         }
 
         public async Task InitializeAsync()
         {
-            IsDarkMode = await _settingsService.GetIsDarkModeAsync();
+            //IsDarkMode = await _settingsService.GetIsDarkModeAsync();
             _initialized = true;
             OnThemeChanged?.Invoke();
         }
 
-        public async Task SetDarkModeAsync(bool isDark)
+        private MudTheme BuildTheme(bool isDark)
         {
-            IsDarkMode = isDark;
-            await _settingsService.SetIsDarkModeAsync(isDark);
-            OnThemeChanged?.Invoke();
+            return new MudTheme
+            {
+                PaletteLight = new PaletteLight {
+                    Primary = Colors.Cyan.Default,              // botones, switches
+                    Secondary = Colors.Orange.Accent2,          // detalles, acentos
+                    AppbarBackground = Colors.Shades.White,     // encabezado
+                    DrawerBackground = Colors.Cyan.Lighten5,    // fondo del menú
+                    Background = Colors.Gray.Lighten5,          // fondo principal
+                    Surface = Colors.Shades.White               // tarjetas, etc.
+                    //Primary = Colors.Blue.Default,
+                    //AppbarBackground = Colors.Blue.Lighten1,
+                    //DrawerBackground = Colors.Blue.Lighten5,
+                    //Background = Colors.Gray.Lighten5
+                },
+                PaletteDark = new PaletteDark {
+                    Primary = Colors.Teal.Lighten2,             // botones y switches
+                    Secondary = Colors.Orange.Accent3,          // acentos suaves
+                    AppbarBackground = Colors.Gray.Darken4,     // encabezado
+                    DrawerBackground = Colors.BlueGray.Darken3, // fondo del menú
+                    Background = Colors.Gray.Darken4,           // fondo general
+                    Surface = Colors.Gray.Darken3               // tarjetas
+                }
+            };
         }
 
-        private static readonly MudTheme LightTheme = new MudTheme()
-        {
-            PaletteLight = new PaletteLight()
-            {
-                Primary = Colors.Blue.Default,
-                Background = Colors.Gray.Lighten5
-            }
-        };
-
-        private static readonly MudTheme DarkTheme = new MudTheme()
-        {
-            PaletteDark = new PaletteDark()
-            {
-                Primary = Colors.Blue.Lighten3,
-                Background = Colors.Gray.Darken4
-            }
-        };
+        public MudTheme GetTheme() => Theme ?? BuildTheme(IsDarkMode);
     }
+
 
 }

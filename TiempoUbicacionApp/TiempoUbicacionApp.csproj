@@ -20,8 +20,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
+		<BlazorWebViewEnableDeveloperTools>true</BlazorWebViewEnableDeveloperTools>
 
-        <!-- Display name -->
+		<!-- Display name -->
         <ApplicationTitle>TiempoUbicacionApp</ApplicationTitle>
 
         <!-- App Identifier -->
