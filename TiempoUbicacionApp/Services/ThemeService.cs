@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MudBlazor;
+using MudBlazor.Utilities;
 using Colors = MudBlazor.Colors;
 
 
@@ -40,7 +41,7 @@ namespace TiempoUbicacionApp.Services
             {
                 PaletteLight = new PaletteLight {
                     Primary = Colors.Cyan.Default,              // botones, switches
-                    Secondary = Colors.Orange.Accent2,          // detalles, acentos
+                    Secondary = Colors.Blue.Accent4,           // detalles, acentos
                     AppbarBackground = Colors.Shades.White,     // encabezado
                     DrawerBackground = Colors.Cyan.Lighten5,    // fondo del menú
                     Background = Colors.Gray.Lighten5,          // fondo principal
