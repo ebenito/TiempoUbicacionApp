@@ -10,13 +10,11 @@ namespace TiempoUbicacionApp
         {
             _themeService = themeService;
             InitializeComponent();
-            Task.Run(() => _themeService.InitializeAsync());
-        }
 
-        //public App()
-        //{
-        //    InitializeComponent();
-        //}
+#if DEBUG
+            MauiSettingsService.ResetPreferences();
+#endif
+        }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {

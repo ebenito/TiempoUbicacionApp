@@ -97,7 +97,7 @@
         horaUtc = utcNow.ToString("HH:mm:ss");
         fechaActual = now.ToString("dddd, dd MMMM yyyy");
         offsetFormatted = offset >= TimeSpan.Zero ? $"+{offset:hh\\:mm}" : $"-{offset:hh\\:mm}";
-        tipoHorario = TimeZoneInfo.Local.IsDaylightSavingTime(now) ? "Horario de verano" : "Horario estándar";
+        tipoHorario = TimeZoneInfo.Local.IsDaylightSavingTime(now) ? "Horario de ahorro de luz (verano)" : "Horario estándar (invierno)";
 
         await InvokeAsync(StateHasChanged);
     }

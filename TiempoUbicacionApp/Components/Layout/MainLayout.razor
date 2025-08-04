@@ -51,18 +51,19 @@
     }
 
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Cargar configuración inicial
+        await ThemeService.InitializeAsync(); // <- Se asegura de leer la preferencia
         _isDarkMode = ThemeService.IsDarkMode;
         _theme = ThemeService.GetTheme();
         ThemeService.OnChange += ThemeChanged;
-        base.OnInitialized();
     }
+
 
     private void ThemeChanged(bool isDark)
     {
         _isDarkMode = isDark;
+        _theme = ThemeService.GetTheme();
         InvokeAsync(StateHasChanged);
     }
 

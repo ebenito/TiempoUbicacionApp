@@ -26,6 +26,13 @@ namespace TiempoUbicacionApp.Services
 
         public Task SaveEntryAsync(LocationEntry entry)
         {
+            if (entry.Latitude == "" || entry.Longitude == "")
+            {
+                entry.Latitude = "40.51.33 N";
+                entry.Longitude = "2.12.32 O";
+                entry.Location = "Olmeda de Cobeta";
+            }
+
             return _db.InsertAsync(entry);
         }
 

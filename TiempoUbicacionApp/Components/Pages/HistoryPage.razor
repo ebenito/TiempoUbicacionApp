@@ -3,9 +3,9 @@
 @using TiempoUbicacionApp.Services
 @inject LocationDatabaseService DatabaseService
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
 
-    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">📜 Historial de registros</MudText>
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4" Style="margin-left: 4vw;">📜 Historial de registros</MudText>
 
     @if (entries == null)
     {
@@ -17,7 +17,33 @@
     }
     else
     {
-        <MudGrid GutterSize="3">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            <MudCard>
+                <MudCardHeader>
+                    <MudText Typo="Typo.h6">Histórico de datos</MudText>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTable Items="@entries" Dense="true" Hover="true" Bordered="true" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Fecha</MudTh>
+                            <MudTh>Hora Local</MudTh>
+                            <MudTh>UTC</MudTh>
+                            <MudTh>Ubicación</MudTh>
+                            <MudTh>Coordenadas</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Fecha">@context.fechaActual</MudTd>
+                            <MudTd DataLabel="Hora Local">@context.horaLocal</MudTd>
+                            <MudTd DataLabel="UTC">@context.horaUtc <span> - Desfase: @context.desfase</span><br /><span>@context.tipoHorario</span></MudTd>
+                            <MudTd DataLabel="Ubicación">@context.Location</MudTd>
+                            <MudTd DataLabel="Coordenadas:"><span>Latitud: @context.Latitude</span> <br /><span>Longitud: @context.Longitude</span></MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+
+       @*  <MudGrid GutterSize="3">
             @foreach (var entry in entries)
             {
                 <MudItem xs="12">
@@ -31,7 +57,7 @@
                     </MudPaper>
                 </MudItem>
             }
-        </MudGrid>
+        </MudGrid> *@
     }
 
 </MudContainer>
