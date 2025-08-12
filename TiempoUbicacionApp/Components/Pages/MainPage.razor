@@ -4,6 +4,7 @@
 @using CommunityToolkit.Maui.Alerts
 @inject IJSRuntime JS
 @inject IAlertService AlertService
+@* @inject TimeZoneService TimeZoneService *@
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
 
@@ -39,6 +40,7 @@
                 <MudText>@locationName</MudText>
                 <MudText>Latitud: @formattedLatitude</MudText>
                 <MudText>Longitud: @formattedLongitude</MudText>
+                <MudText>Zona horaria fija: @zona</MudText>
 
                 @if (!string.IsNullOrWhiteSpace(mapUrl))
                 {
@@ -73,13 +75,17 @@
     private string fechaActual = string.Empty;
     private string offsetFormatted = string.Empty;
     private string tipoHorario = string.Empty;
+    private int zona = 0;
 
-    private System.Threading.Timer timer; 
 
-    protected override void OnInitialized()
-    {
-        timer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);
-    }
+    private System.Threading.Timer timer;  
+    //private TimeZoneService _timeZoneService;  
+
+    protected override void OnInitialized()  
+    {  
+        // _timeZoneService = TimeZoneService; 
+        timer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);  
+    }  
 
     public void Dispose()
     {
@@ -114,7 +120,16 @@
                 locationName = location.Name;
                 formattedLatitude = location.FormattedLatitude;
                 formattedLongitude = location.FormattedLongitude;
+                zona = 1; //_timeZoneService.GetStandardGMTZone();
                 mapUrl = $"https://maps.google.com/maps?q={location.Lat},{location.Lng}&z=15&output=embed";
+            }
+            else            
+            {
+                locationName = "Casto Celtíbero, Olmeda de Cobeta";
+                formattedLatitude = "40.51.33 N";
+                formattedLongitude = "02.12.32 O";
+                zona = 1;
+                mapUrl = $"https://maps.google.com/maps?q=40.859177,-2.208990&z=15&output=embed";
             }
         }
         catch (Exception ex)
@@ -136,26 +151,23 @@
     }
 
 
-    @code {  
-
-        async Task SaveData()  
+    async Task SaveData()  
+    {  
+        await DatabaseService.SaveEntryAsync(new LocationEntry  
         {  
-            await DatabaseService.SaveEntryAsync(new LocationEntry  
-            {  
-                Date = DateTime.Now,  
-                horaLocal = horaLocal,
-                horaUtc = horaUtc,
-                fechaActual = fechaActual,
-                desfase = offsetFormatted,
-                tipoHorario = tipoHorario,
-                Location = locationName,  
-                Latitude = formattedLatitude,  
-                Longitude = formattedLongitude  
-            });  
+            Date = DateTime.Now,  
+            horaLocal = horaLocal,
+            horaUtc = horaUtc,
+            fechaActual = fechaActual,
+            desfase = offsetFormatted,
+            tipoHorario = tipoHorario,
+            Location = locationName,  
+            Latitude = formattedLatitude,  
+            Longitude = formattedLongitude  
+        });  
             
-            await AlertService.ShowToastAsync("Datos guardados correctamente"); 
-        }  
-    }
+        await AlertService.ShowToastAsync("Datos guardados correctamente"); 
+    }  
 
     async Task ShareData()
     { 
