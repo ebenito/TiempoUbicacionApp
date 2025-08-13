@@ -48,7 +48,7 @@ namespace TiempoUbicacionApp.Services
             }
             catch (Exception ex)
             {
-                await _alertService.ShowToastAsync($"❌ Error al obtener ubicación: {ex.Message}");
+                await _alertService.ShowLongToastAsync($"❌ Error al obtener ubicación: {ex.Message}");
                 return default;
             }
         }

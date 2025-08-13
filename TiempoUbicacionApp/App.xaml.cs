@@ -1,4 +1,5 @@
-﻿using TiempoUbicacionApp.Services;
+﻿using System.Diagnostics;
+using TiempoUbicacionApp.Services;
 
 namespace TiempoUbicacionApp
 {
@@ -8,17 +9,32 @@ namespace TiempoUbicacionApp
 
         public App(ThemeService themeService)
         {
-            _themeService = themeService;
             InitializeComponent();
+            _themeService = themeService;
 
-//#if DEBUG
-//            MauiSettingsService.ResetPreferences();
-//#endif
+            // Inicializa asincrónicamente después de que la app se haya creado
+            Task.Run(async () => await _themeService.InitializeAsync());
+
+            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
+            TaskScheduler.UnobservedTaskException += HandleUnobservedTaskException;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
             return new Window(new MainPage()) { Title = "TiempoUbicacionApp" };
         }
+
+        private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            var ex = e.ExceptionObject as Exception;
+            Debug.WriteLine($"[UNHANDLED] {ex?.Message}");
+        }
+
+        private void HandleUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Debug.WriteLine($"[UNOBSERVED] {e.Exception?.Message}");
+            e.SetObserved();
+        }
     }
+
 }

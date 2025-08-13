@@ -32,7 +32,13 @@ namespace TiempoUbicacionApp
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddMudServices();
 
-            builder.Services.AddPlatformServices();
+            builder.Services.AddPlatformServices(); // Se agrega el registro de servicios de la plataforma (Método 1 de diversificación por plataforma)
+
+            #if WINDOWS // Método 2 de diversificación por plataforma
+                builder.Services.AddSingleton<IAlertService, MauiAlertService>(); // Usa MudBlazor
+#           else
+                builder.Services.AddSingleton<IAlertService, NativeAlertService>(); // Usa CommunityToolkit
+            #endif
 
             builder.Services.AddSingleton<LocationDatabaseService>();
             builder.Services.AddSingleton<GeolocationService>();

@@ -1,6 +1,9 @@
 ﻿@using TiempoUbicacionApp.Services
 @inherits LayoutComponentBase
 @inject ThemeService ThemeService
+@inject ISnackbar Snackbar
+@inject IAlertService AlertService
+
 
 <MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" />
 <MudPopoverProvider />
@@ -57,6 +60,11 @@
         _isDarkMode = ThemeService.IsDarkMode;
         _theme = ThemeService.GetTheme();
         ThemeService.OnChange += ThemeChanged;
+        
+        if (AlertService is MauiAlertService mas)
+        {
+            mas.Initialize(Snackbar); // Aquí ya MudBlazor está listo
+        }
     }
 
 

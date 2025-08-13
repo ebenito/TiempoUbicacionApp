@@ -7,6 +7,8 @@ public static class PlatformServiceRegistration
 {
     public static void AddPlatformServices(this IServiceCollection services)
     {
-        services.AddSingleton<IAlertService, MauiAlertService>();
+        //services.AddSingleton<IAlertService, MauiAlertService>();
+        services.AddSingleton<IFeedbackService, WindowsFeedbackService>();
+
     }
 }

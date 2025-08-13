@@ -76,6 +76,13 @@ h1:focus {
     color: #2c3e50;
 }
 
+/* Centra el contenedor cuando la posición es TopCenter */
+.mud-snackbar-container.mud-snackbar-top-center {
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+}
+
 
 @supports (-webkit-touch-callout: none) {
     .status-bar-safe-area {

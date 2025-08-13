@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace TiempoUbicacionApp.Services
 {
-    public interface IAlertService
+    public interface IFeedbackService
     {
-        Task ShowToastAsync(string message);
-        Task ShowLongToastAsync(string message);
-
+        Task PlaySuccessFeedbackAsync();
+        Task PlayErrorFeedbackAsync();
     }
+
 }

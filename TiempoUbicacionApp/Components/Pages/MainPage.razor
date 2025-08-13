@@ -136,7 +136,7 @@
         catch (Exception ex)
         {
             errorMessage = "Error: " + ex.Message;
-            await AlertService.ShowToastAsync(errorMessage);
+            await AlertService.ShowLongToastAsync(errorMessage);
         }
         finally
         {
