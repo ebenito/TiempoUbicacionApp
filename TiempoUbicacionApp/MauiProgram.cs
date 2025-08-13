@@ -27,7 +27,7 @@ namespace TiempoUbicacionApp
 
             builder.Services.AddMauiBlazorWebView();
 
-            //builder.Services.AddSingleton<ITimeZoneService, TimeZoneService>();
+            builder.Services.AddSingleton<ITimeZoneService, TimeZoneService>();
             builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddMudServices();

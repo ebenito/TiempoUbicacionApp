@@ -4,7 +4,7 @@
 @using CommunityToolkit.Maui.Alerts
 @inject IJSRuntime JS
 @inject IAlertService AlertService
-@* @inject TimeZoneService TimeZoneService *@
+@inject ITimeZoneService TimeZoneService
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
 
@@ -40,7 +40,7 @@
                 <MudText>@locationName</MudText>
                 <MudText>Latitud: @formattedLatitude</MudText>
                 <MudText>Longitud: @formattedLongitude</MudText>
-                <MudText>Zona horaria fija: @zona</MudText>
+                <MudText>Zona GMT: @zona | @(isDst ? "Horario de verano (DST)" : "Horario estándar")</MudText>
 
                 @if (!string.IsNullOrWhiteSpace(mapUrl))
                 {
@@ -76,14 +76,13 @@
     private string offsetFormatted = string.Empty;
     private string tipoHorario = string.Empty;
     private int zona = 0;
+    private bool isDst;
 
 
     private System.Threading.Timer timer;  
-    //private TimeZoneService _timeZoneService;  
 
     protected override void OnInitialized()  
     {  
-        // _timeZoneService = TimeZoneService; 
         timer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);  
     }  
 
@@ -120,7 +119,8 @@
                 locationName = location.Name;
                 formattedLatitude = location.FormattedLatitude;
                 formattedLongitude = location.FormattedLongitude;
-                zona = 1; //_timeZoneService.GetStandardGMTZone();
+                zona = TimeZoneService.GetStandardGMTZone();
+                isDst = TimeZoneService.IsDaylightSavingNow();
                 mapUrl = $"https://maps.google.com/maps?q={location.Lat},{location.Lng}&z=15&output=embed";
             }
             else            
@@ -128,7 +128,8 @@
                 locationName = "Casto Celtíbero, Olmeda de Cobeta";
                 formattedLatitude = "40.51.33 N";
                 formattedLongitude = "02.12.32 O";
-                zona = 1;
+                zona = TimeZoneService.GetStandardGMTZone();
+                isDst = TimeZoneService.IsDaylightSavingNow();
                 mapUrl = $"https://maps.google.com/maps?q=40.859177,-2.208990&z=15&output=embed";
             }
         }
@@ -170,29 +171,41 @@
     }  
 
     async Task ShareData()
-    { 
+    {
         string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
 
         try
         {
-            var canShare = await JS.InvokeAsync<bool>("canShare");
+            bool canShare = await JS.InvokeAsync<bool>("canShare");
 
-            if (!canShare)
+            if (canShare)
             {
-                await AlertService.ShowToastAsync("navigator.share no está disponible.");
-                return;
+                // Usar el cuadro de compartir nativo si está disponible
+                await JS.InvokeVoidAsync("invokeShare", new
+                {
+                    title = "Mis datos de ubicación y tiempo",
+                    text = text
+                });
             }
-
-            await JS.InvokeVoidAsync("invokeShare", new
+            else
             {
-                title = "Mis datos de ubicación y tiempo",
-                text
-            });
+                // Copia al portapapeles usando MAUI
+                await Clipboard.SetTextAsync(text);
+                await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
+            }
         }
         catch (JSException jsEx)
         {
-            await JS.InvokeVoidAsync("copyToClipboard", text);
-            await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles; ahora puede pegarlos en dónde los necesite.");
+            Console.WriteLine($"Error al compartir: {jsEx.Message}");
+            await Clipboard.SetTextAsync(text);
+            await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error inesperado: {ex.Message}");
+            await AlertService.ShowToastAsync("Ocurrió un error al intentar compartir.");
         }
     }
+
+
 }
