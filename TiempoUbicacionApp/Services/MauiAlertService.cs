@@ -7,6 +7,12 @@ namespace TiempoUbicacionApp.Services
     public class MauiAlertService : IAlertService
     {
         private ISnackbar? _snackbar;
+        private readonly IFeedbackService _feedbackService;
+
+        public MauiAlertService(IFeedbackService feedbackService)
+        {
+            _feedbackService = feedbackService;
+        }
 
         public void Initialize(ISnackbar snackbar)
         {
@@ -39,13 +45,17 @@ namespace TiempoUbicacionApp.Services
        
     public Task ShowLongToastAsync(string message)
     {
+        // Dispara el feedback de error ANTES de mostrar el mensaje
+        if (_feedbackService != null)
+            Task.Run(async () => await _feedbackService.PlayErrorFeedbackAsync());
+
         if (_snackbar is null)
             return ShowDisplayAlertAsync(message);
 
         _snackbar.Add(
             // RenderFragment con estilo inline => texto negro
-            //Snackbar para controlar el color del texto por snackbar, usa un RenderFragment(contenido HTML)
-            //y dale estilo inline.Así evitamos peleas de CSS y la prioridad de los estilos de MudBlazor.
+            // Para controlar el color del texto por snackbar, hay que usar un RenderFragment (contenido HTML)
+            // y dale estilo inline.Así evitamos peleas de CSS y la prioridad de los estilos de MudBlazor.
             builder =>
             {
                 builder.OpenElement(0, "span");
@@ -60,6 +70,8 @@ namespace TiempoUbicacionApp.Services
                 cfg.SnackbarVariant = Variant.Filled;
                 cfg.ShowCloseIcon = true;
             });
+
+
 
         return Task.CompletedTask;
     }

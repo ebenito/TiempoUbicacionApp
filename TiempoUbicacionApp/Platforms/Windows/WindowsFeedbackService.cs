@@ -12,13 +12,13 @@ namespace TiempoUbicacionApp.Platforms.Windows
     {
         public Task PlaySuccessFeedbackAsync()
         {
-            SystemSounds.Asterisk.Play(); // Esto ahora debería funcionar correctamente
+            SystemSounds.Asterisk.Play(); 
             return Task.CompletedTask;
         }
 
         public Task PlayErrorFeedbackAsync()
         {
-            SystemSounds.Hand.Play(); // Esto también debería funcionar correctamente
+            SystemSounds.Hand.Play(); 
             return Task.CompletedTask;
         }
     }
