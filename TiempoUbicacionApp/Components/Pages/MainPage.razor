@@ -48,6 +48,10 @@
                         <iframe width="100%" height="250" frameborder="0" src="@mapUrl" allowfullscreen></iframe>
                     </MudPaper>
                 }
+
+                <div class="mt-3">
+                    <button class="btn btn-primary" @onclick="RefreshLocation">🔄 Actualizar ubicación</button>
+                </div>
             </MudCardContent>
         </MudCard>
     }
@@ -66,6 +70,7 @@
 
 @code {
     string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;
+    string lat = "0", lon = "0";
 
     string errorMessage = string.Empty;
     bool isLoading = true;
@@ -111,7 +116,6 @@
     {
         try
         {   
-            await CheckPermisosUbicacion();
             var location = await GeolocationService.GetCurrentLocationAsync();
 
             if (location.Name != null)
@@ -121,7 +125,12 @@
                 formattedLongitude = location.FormattedLongitude;
                 zona = TimeZoneService.GetStandardGMTZone();
                 isDst = TimeZoneService.IsDaylightSavingNow();
-                mapUrl = $"https://maps.google.com/maps?q={location.Lat},{location.Lng}&z=15&output=embed";
+                lat = location.Lat.ToString().Replace(",", ".");
+                lon = location.Lng.ToString().Replace(",", ".");
+                if (location.Lat != 0 && location.Lng != 0)
+                {
+                    mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
+                }
             }
             else            
             {
@@ -144,14 +153,24 @@
         }
     }
 
-    private async Task CheckPermisosUbicacion()
+    private async Task RefreshLocation()
     {
-        // Este método debe ser implementado en el servicio de plataforma
-        // Aquí solo se llama al servicio de alerta si hay error
-        await Task.CompletedTask;
+        var location = await GeolocationService.GetCurrentLocationAsync(forceNew: true);
+
+        if (location.Lat != 0 && location.Lng != 0)
+        {
+            lat = location.Lat.ToString().Replace(",", ".");
+            lon = location.Lng.ToString().Replace(",", ".");
+
+            mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
+            await AlertService.ShowToastAsync("Ubicación actualizada.");
+        }
+        else
+        {
+            await AlertService.ShowLongToastAsync("No se pudo actualizar la ubicación.");
+        }
     }
-
-
+   
     async Task SaveData()  
     {  
         await DatabaseService.SaveEntryAsync(new LocationEntry  
