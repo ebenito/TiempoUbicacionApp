@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using TiempoUbicacionApp.Services;
+using Microsoft.Extensions.Configuration;
 
 #if ANDROID
 using TiempoUbicacionApp.Platforms.Android;
@@ -24,6 +25,24 @@ namespace TiempoUbicacionApp
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
+
+#if DEBUG
+            // Cargar secretos solo en desarrollo
+            builder.Configuration              
+                .AddUserSecrets("tiempo-ubicacion-app-12345")     //.AddUserSecrets<App>()
+                .AddEnvironmentVariables();
+#endif
+
+            builder.Services.AddHttpClient(); // para el HttpClient de DI
+
+            builder.Services.AddSingleton<IOneDriveService>(sp =>
+            {
+                var cfg = sp.GetRequiredService<IConfiguration>();
+                var clientId = cfg["Graph:ClientId"];
+                var tenantId = cfg["Graph:TenantId"] ?? "common";
+                return new OneDriveService(clientId!, tenantId);
+            });
+
 
             builder.Services.AddMauiBlazorWebView();
 

@@ -21,6 +21,7 @@
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
 		<BlazorWebViewEnableDeveloperTools>true</BlazorWebViewEnableDeveloperTools>
+		<UserSecretsId>tiempo-ubicacion-app-12345</UserSecretsId>
 
 		<!-- Display name -->
         <ApplicationTitle>TiempoUbicacionApp</ApplicationTitle>
@@ -64,6 +65,11 @@
 
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Maui" Version="12.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.8" />
+        <PackageReference Include="Microsoft.Graph" Version="5.91.0" />
+        <PackageReference Include="Microsoft.Identity.Client" Version="4.76.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.100" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.100" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />

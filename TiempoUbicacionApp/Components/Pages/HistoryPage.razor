@@ -1,11 +1,15 @@
 ﻿@page "/history"
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
+@inject IAlertService AlertService
 @inject LocationDatabaseService DatabaseService
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
 
     <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4" Style="margin-left: 4vw;">📜 Historial de registros</MudText>
+
+    <MudButton OnClick="BackupToOneDrive">Backup en OneDrive</MudButton>
+    <MudButton OnClick="RestoreFromOneDrive">Restaurar desde OneDrive</MudButton>
 
     @if (entries == null)
     {
@@ -63,10 +67,32 @@
 </MudContainer>
 
 @code {
+    [Inject] private IOneDriveService OneDriveService { get; set; }
+
     private List<LocationEntry> entries;
+    private string DbPath => Path.Combine(FileSystem.AppDataDirectory, "locations.db");
 
     protected override async Task OnInitializedAsync()
     {
         entries = await DatabaseService.GetAllEntriesAsync();
     }
+
+    private async Task BackupToOneDrive()
+    {
+        if (!OneDriveService.IsSignedIn)
+         //   await OneDriveService.LoginAsync();
+
+        await OneDriveService.UploadBackupAsync(DbPath);
+        await AlertService.ShowToastAsync("✅ Backup subido a OneDrive");
+    }
+
+    private async Task RestoreFromOneDrive()
+    {
+        if (!OneDriveService.IsSignedIn)
+         //   await OneDriveService.LoginAsync();
+
+        await OneDriveService.DownloadBackupAsync(DbPath);
+        await AlertService.ShowLongToastAsync("📂 Backup restaurado desde OneDrive");
+    }
+
 }
