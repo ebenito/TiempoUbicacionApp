@@ -11,7 +11,7 @@
     <MudButton OnClick="BackupToOneDrive">Backup en OneDrive</MudButton>
     <MudButton OnClick="RestoreFromOneDrive">Restaurar desde OneDrive</MudButton>
 
-    @if (entries == null)
+   @*  @if (entries == null)
     {
         <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
     }
@@ -45,9 +45,28 @@
                     </MudTable>
                 </MudCardContent>
             </MudCard>
-        </MudContainer>
+        </MudContainer> *@
 
-       @*  <MudGrid GutterSize="3">
+    @if (entries == null || !entries.Any())
+    {
+        <MudText>No hay registros guardados.</MudText>
+    }
+    else
+    {
+        @foreach (var item in entries)
+        {
+            <MudCard>
+                <MudCardContent>
+                    <MudText>@item.fechaActual</MudText>
+                    <MudText>@item.horaLocal</MudText>
+                    <MudText>@item.Location</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+    }
+
+
+        @* <MudGrid GutterSize="3">
             @foreach (var entry in entries)
             {
                 <MudItem xs="12">
@@ -62,37 +81,83 @@
                 </MudItem>
             }
         </MudGrid> *@
-    }
+
+
+    @* } *@
 
 </MudContainer>
 
 @code {
+    [Inject] private LocationDatabaseService LocationDatabaseService { get; set; }
     [Inject] private IOneDriveService OneDriveService { get; set; }
 
-    private List<LocationEntry> entries;
-    private string DbPath => Path.Combine(FileSystem.AppDataDirectory, "locations.db");
+
+    private string DbPath => Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+    private List<LocationEntry> entries = new();
 
     protected override async Task OnInitializedAsync()
     {
-        entries = await DatabaseService.GetAllEntriesAsync();
+        try
+        {
+            entries = await LocationDatabaseService.GetAllEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HistoryPage] Error cargando BD: {ex.Message}");
+            await AlertService.ShowToastAsync("Error al cargar histórico");
+            entries = new();
+        }
     }
+
+
 
     private async Task BackupToOneDrive()
     {
-        if (!OneDriveService.IsSignedIn)
-         //   await OneDriveService.LoginAsync();
+        try
+        {
+            if (!OneDriveService.IsSignedIn)
+                //  await OneDriveService.LoginAsync();
 
-        await OneDriveService.UploadBackupAsync(DbPath);
-        await AlertService.ShowToastAsync("✅ Backup subido a OneDrive");
+            await OneDriveService.UploadBackupAsync(DbPath);
+            await AlertService.ShowToastAsync("✅ Backup subido a OneDrive");
+        }
+        catch (Exception ex)
+        {
+            //Console.WriteLine($"Error durante el backup: {ex.Message}");
+            await AlertService.ShowLongToastAsync($"No se ha podido completar el backup: {ex.Message}");
+        }
     }
 
     private async Task RestoreFromOneDrive()
     {
-        if (!OneDriveService.IsSignedIn)
-         //   await OneDriveService.LoginAsync();
+        try
+        {
+            //Console.WriteLine("RestoreFromOneDrive iniciado");
 
-        await OneDriveService.DownloadBackupAsync(DbPath);
-        await AlertService.ShowLongToastAsync("📂 Backup restaurado desde OneDrive");
+            if (!OneDriveService.IsSignedIn)
+                //Console.WriteLine("No estás autenticado");
+                // await OneDriveService.LoginAsync();
+
+            await OneDriveService.DownloadBackupAsync(DbPath);
+            await LocationDatabaseService.ReopenAsync();
+            await LoadUbicacionesAsync(); // recarga los datos
+            //Console.WriteLine("Restauración completada");
+
+            await AlertService.ShowToastAsync("📂 Backup restaurado desde OneDrive");
+        }
+        catch (Exception ex)
+        {
+            //Console.WriteLine($"Error durante la restauración: {ex.Message}");
+            await AlertService.ShowLongToastAsync($"No se pudo restaurar el backup: {ex.Message}");
+        }
+        
+    }
+
+
+    private async Task LoadUbicacionesAsync()
+    {
+        entries = await LocationDatabaseService.GetAllEntriesAsync();
+        StateHasChanged(); // fuerza el refresco de la vista
     }
 
 }

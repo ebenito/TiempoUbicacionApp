@@ -10,6 +10,7 @@ using Microsoft.Identity.Client;
 
 namespace TiempoUbicacionApp.Services
 {
+    
     public interface IOneDriveService
     {
         Task<bool> EnsureSignInAsync(); // opcional, para forzar login antes
@@ -26,7 +27,9 @@ namespace TiempoUbicacionApp.Services
     {
         private readonly string _clientId;
         private readonly string _tenantId;
-        private readonly string[] _scopes = new[] { "Files.ReadWrite.All", "User.Read", "offline_access" };
+        //private readonly string[] _scopes = new[] { "Files.ReadWrite.All", "User.Read", "offline_access" };
+        private readonly string[] _scopes = new[] { "Files.ReadWrite", "offline_access" };
+
 
         private readonly IPublicClientApplication _pca;
         private readonly HttpClient _http;
@@ -45,7 +48,7 @@ namespace TiempoUbicacionApp.Services
             _pca = PublicClientApplicationBuilder
                 .Create(_clientId)
                 .WithAuthority(AzureCloudInstance.AzurePublic, "common")
-                .WithTenantId(_tenantId)
+                //.WithTenantId(_tenantId)
                 .WithRedirectUri("http://localhost") // Windows. Para Android ver notas debajo.
                 .Build();
 
@@ -85,36 +88,48 @@ namespace TiempoUbicacionApp.Services
 
         public async Task UploadBackupAsync(string localFilePath, string remoteFileName = "backup.db")
         {
-            if (string.IsNullOrWhiteSpace(localFilePath))
-                throw new ArgumentNullException(nameof(localFilePath));
-            if (!File.Exists(localFilePath))
-                throw new FileNotFoundException("Archivo local no encontrado", localFilePath);
-
-            var token = await GetAccessTokenAsync();
-
-            // Asegura que la carpeta exista
-            await EnsureAppFolderAsync(token);
-
-            // PUT /me/drive/root:/TiempoUbicacionApp/backup.db:/content
-            var uploadUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{AppFolderName}/{remoteFileName}:/content";
-
-            using var stream = File.OpenRead(localFilePath);
-            using var content = new StreamContent(stream);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-
-            using var req = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            req.Content = content;
-
-            using var resp = await _http.SendAsync(req);
-            if (!resp.IsSuccessStatusCode)
+            try
             {
-                var body = await resp.Content.ReadAsStringAsync();
-                throw new InvalidOperationException($"Error subiendo backup: {(int)resp.StatusCode} {resp.ReasonPhrase}\n{body}");
+                if (string.IsNullOrWhiteSpace(localFilePath))
+                    throw new ArgumentNullException(nameof(localFilePath));
+                if (!File.Exists(localFilePath))
+                    throw new FileNotFoundException("Archivo local no encontrado", localFilePath);
+
+                var token = await GetAccessTokenAsync();
+
+                // Asegura que la carpeta exista
+                await EnsureAppFolderAsync(token);
+
+                // PUT /me/drive/root:/TiempoUbicacionApp/backup.db:/content
+                //var uploadUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{AppFolderName}/{remoteFileName}:/content";
+                var uploadUrl = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:/{remoteFileName}:/content";
+
+                var tempPath = Path.Combine(Path.GetTempPath(), "Ubicaciones.db");
+                File.Copy(localFilePath, tempPath, overwrite: true);
+                using var stream = File.OpenRead(tempPath);
+
+                //using var stream = File.OpenRead(localFilePath);
+                using var content = new StreamContent(stream);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+
+                using var req = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                req.Content = content;
+
+                using var resp = await _http.SendAsync(req);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var body = await resp.Content.ReadAsStringAsync();
+                    throw new InvalidOperationException($"Error subiendo backup: {(int)resp.StatusCode} {resp.ReasonPhrase}\n{body}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error durante el backup de la base de datos.", ex);
             }
         }
 
-        public async Task DownloadBackupAsync(string localFilePath, string remoteFileName = "backup.db")
+        public async Task DownloadBackupAsync_BACK(string localFilePath, string remoteFileName = "backup.db")
         {
             if (string.IsNullOrWhiteSpace(localFilePath))
                 throw new ArgumentNullException(nameof(localFilePath));
@@ -122,14 +137,14 @@ namespace TiempoUbicacionApp.Services
             var token = await GetAccessTokenAsync();
 
             // GET /me/drive/root:/TiempoUbicacionApp/backup.db:/content
-            var downloadUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{AppFolderName}/{remoteFileName}:/content";
+            // var downloadUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{AppFolderName}/{remoteFileName}:/content";
+            var downloadUrl = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:/{remoteFileName}:/content";
 
             using var req = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             using var resp = await _http.SendAsync(req);
-            if (resp.StatusCode == HttpStatusCode.NotFound)
-                throw new FileNotFoundException("No existe backup en OneDrive.", remoteFileName);
+            if (resp.StatusCode == HttpStatusCode.NotFound)throw new FileNotFoundException("No existe backup en OneDrive.", remoteFileName);
 
             if (!resp.IsSuccessStatusCode)
             {
@@ -141,6 +156,66 @@ namespace TiempoUbicacionApp.Services
             using var outStream = File.Create(localFilePath);
             await inStream.CopyToAsync(outStream);
         }
+
+        public async Task DownloadBackupAsync(string localDbPath, string remoteFileName = "backup.db")
+        {
+            if (string.IsNullOrWhiteSpace(localDbPath))
+                throw new ArgumentNullException(nameof(localDbPath));
+
+            var tempPath = Path.Combine(Path.GetTempPath(), $"restore_{Guid.NewGuid()}.db");
+
+            // Instanciar el servicio de base de datos
+            var dbService = new LocationDatabaseService();
+            var dbWasOpen = dbService.IsOpen;
+
+            try
+            {
+                // Cerrar la base de datos si está abierta
+                if (dbWasOpen)
+                    await dbService.CloseAsync();
+
+                var token = await GetAccessTokenAsync();
+                var downloadUrl = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:/{remoteFileName}:/content";
+
+                using var req = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                using var resp = await _http.SendAsync(req);
+                if (resp.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileNotFoundException("No se encontró el archivo de backup en OneDrive.");
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var body = await resp.Content.ReadAsStringAsync();
+                    throw new IOException($"Error al descargar el backup: {resp.StatusCode} - {body}");
+                }
+
+                using var inStream = await resp.Content.ReadAsStreamAsync();
+                using (var outStream = File.Create(tempPath))
+                {
+                    await inStream.CopyToAsync(outStream);
+                }
+
+                File.Copy(tempPath, localDbPath, overwrite: true);
+
+
+                // Reabrir la base de datos si estaba abierta
+                if (dbWasOpen)
+                    await dbService.OpenAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error durante la restauración de la base de datos.", ex);
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                {
+                    try { File.Delete(tempPath); } catch { /* Ignorar errores de limpieza */ }
+                }
+            }
+        }
+
 
         private async Task<string> GetAccessTokenAsync()
         {
@@ -168,7 +243,9 @@ namespace TiempoUbicacionApp.Services
         private async Task EnsureAppFolderAsync(string token)
         {
             // ¿Existe /TiempoUbicacionApp?
-            var checkUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{AppFolderName}";
+            var checkUrl = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:/";
+            //var checkUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{AppFolderName}";
+
             using (var checkReq = new HttpRequestMessage(HttpMethod.Get, checkUrl))
             {
                 checkReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

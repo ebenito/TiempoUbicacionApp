@@ -10,14 +10,39 @@ namespace TiempoUbicacionApp.Services
 {
     public class LocationDatabaseService
     {
-        private readonly SQLiteAsyncConnection _db;
+        private SQLiteAsyncConnection _db;
+        private readonly string _dbPath;
+
+        public bool IsOpen => _db != null;
 
         public LocationDatabaseService()
         {
-            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
-            _db = new SQLiteAsyncConnection(dbPath);
+            _dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+            _db = new SQLiteAsyncConnection(_dbPath);
             _db.CreateTableAsync<LocationEntry>().Wait();
         }
+
+        public async Task CloseAsync()
+        {
+            _db = null;
+            await Task.CompletedTask;
+        }
+
+        public async Task OpenAsync()
+        {
+            if (_db == null)
+            {
+                _db = new SQLiteAsyncConnection(_dbPath);
+                await _db.CreateTableAsync<LocationEntry>();
+            }
+        }
+        public async Task ReopenAsync()
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+            _db = new SQLiteAsyncConnection(dbPath);
+            await _db.CreateTableAsync<LocationEntry>();
+        }
+
 
         public async Task InitAsync()
         {
