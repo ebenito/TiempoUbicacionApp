@@ -1,4 +1,27 @@
 ﻿@page "/history"
+@using Microsoft.Maui.Devices
+
+@if (_isAndroid)
+{
+    <AndroidHistory />
+}
+else
+{
+    <DesktopHistory />
+}
+
+@code {
+    private bool _isAndroid;
+
+    protected override void OnInitialized()
+    {
+        // Detección en tiempo de ejecución
+        _isAndroid = DeviceInfo.Current.Platform == DevicePlatform.Android;
+    }
+}
+
+
+@* @page "/history"
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
 @inject IAlertService AlertService
@@ -11,7 +34,7 @@
     <MudButton OnClick="BackupToOneDrive">Backup en OneDrive</MudButton>
     <MudButton OnClick="RestoreFromOneDrive">Restaurar desde OneDrive</MudButton>
 
-   @*  @if (entries == null)
+    @if (entries == null)
     {
         <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
     }
@@ -45,45 +68,26 @@
                     </MudTable>
                 </MudCardContent>
             </MudCard>
-        </MudContainer> *@
+        </MudContainer>
 
-    @if (entries == null || !entries.Any())
-    {
-        <MudText>No hay registros guardados.</MudText>
+                             <MudGrid GutterSize="3">
+                                @foreach (var entry in entries)
+                                {
+                                    <MudItem xs="12">
+                                        <MudPaper Class="p-4 entry-card" Elevation="1" Style="background-color: #D7CCC8;">
+                                            <MudText Typo="Typo.h6" Color="Color.Secondary">   @entry.fechaActual — @entry.horaLocal (@entry.tipoHorario)</MudText>
+                                            <MudDivider Class="my-2" />
+                                            <MudText><strong>UTC:</strong> @entry.horaUtc</MudText>
+                                            <MudText><strong>Desfase:</strong> @entry.desfase</MudText>
+                                            <MudText><strong>Ubicación:</strong> @entry.Location</MudText>
+                                            <MudText><strong>Coordenadas:</strong><span>Lat.:</span> @entry.Latitude, <span>Long.:</span> @entry.Longitude</MudText>
+                                        </MudPaper>
+                                    </MudItem>
+                                }
+                            </MudGrid> 
+
+
     }
-    else
-    {
-        @foreach (var item in entries)
-        {
-            <MudCard>
-                <MudCardContent>
-                    <MudText>@item.fechaActual</MudText>
-                    <MudText>@item.horaLocal</MudText>
-                    <MudText>@item.Location</MudText>
-                </MudCardContent>
-            </MudCard>
-        }
-    }
-
-
-        @* <MudGrid GutterSize="3">
-            @foreach (var entry in entries)
-            {
-                <MudItem xs="12">
-                    <MudPaper Class="p-4 entry-card" Elevation="1" Style="background-color: #D7CCC8;">
-                        <MudText Typo="Typo.h6" Color="Color.Secondary">   @entry.fechaActual — @entry.horaLocal (@entry.tipoHorario)</MudText>
-                        <MudDivider Class="my-2" />
-                        <MudText><strong>UTC:</strong> @entry.horaUtc</MudText>
-                        <MudText><strong>Desfase:</strong> @entry.desfase</MudText>
-                        <MudText><strong>Ubicación:</strong> @entry.Location</MudText>
-                        <MudText><strong>Coordenadas:</strong><span>Lat.:</span> @entry.Latitude, <span>Long.:</span> @entry.Longitude</MudText>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid> *@
-
-
-    @* } *@
 
 </MudContainer>
 
@@ -160,4 +164,4 @@
         StateHasChanged(); // fuerza el refresco de la vista
     }
 
-}
+} *@

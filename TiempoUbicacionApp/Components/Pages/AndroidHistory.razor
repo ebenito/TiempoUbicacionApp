@@ -1,0 +1,62 @@
+﻿@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@inject LocationDatabaseService DatabaseService
+@inject IAlertService AlertService
+
+<h3 style="margin:0 0 12px 0">Historial (Android)</h3>
+
+@if (_loading)
+{
+    <p>Cargando…</p>
+}
+else if (!string.IsNullOrEmpty(_error))
+{
+    <div style="background:#fdecea;color:#c0392b;padding:10px;border-radius:8px">@_error</div>
+}
+else if (entries.Count == 0)
+{
+    <div style="opacity:.7">No hay registros guardados.</div>
+}
+else
+{
+    <ul style="list-style:none;padding:0;margin:0">
+        @foreach (var e in entries)
+        {
+            <li style="background:#fff;border-radius:12px;padding:12px;margin:10px 0;
+                               box-shadow:0 4px 10px rgba(0,0,0,.08)">
+                <div style="font-weight:600;margin-bottom:6px">@e.fechaActual</div>
+                <div>🕒 Local: @e.horaLocal · 🌍 UTC: @e.horaUtc · (@e.desfase)</div>
+                <div>⏱ @e.tipoHorario</div>
+                <div>📍 @e.Location</div>
+                <div>🧭 @e.Latitude, @e.Longitude</div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<LocationEntry> entries = new();
+    private bool _loading = true;
+    private string _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Asegura DB abierta sin bloquear el UI thread (Android es sensible a deadlocks)
+            await DatabaseService.OpenAsync().ConfigureAwait(false);
+            var list = await DatabaseService.GetAllEntriesAsync().ConfigureAwait(false);
+            entries = list ?? new List<LocationEntry>();
+        }
+        catch (Exception ex)
+        {
+            _error = "No se pudo cargar el histórico en Android.";
+            try { await AlertService.ShowLongToastAsync($"{_error}\n{ex.Message}"); } catch { /* no romper */ }
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

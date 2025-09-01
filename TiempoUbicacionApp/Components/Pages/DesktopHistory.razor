@@ -1,0 +1,67 @@
+﻿@using MudBlazor
+@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@inject LocationDatabaseService DatabaseService
+@inject IAlertService AlertService
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h5" Class="mb-2">Historial</MudText>
+
+    @if (_loading)
+    {
+        <MudText>Cargando…</MudText>
+    }
+    else if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    else if (entries.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No hay registros guardados.</MudAlert>
+    }
+    else
+    {
+        <MudTable Items="entries" Dense="true" Hover="true" Bordered="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>Fecha</MudTh>
+                <MudTh>Hora Local</MudTh>
+                <MudTh>UTC (Desfase)</MudTh>
+                <MudTh>Horario</MudTh>
+                <MudTh>Ubicación</MudTh>
+                <MudTh>Lat / Lon</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Fecha">@context.fechaActual</MudTd>
+                <MudTd DataLabel="Hora Local">@context.horaLocal</MudTd>
+                <MudTd DataLabel="UTC">@context.horaUtc (@context.desfase)</MudTd>
+                <MudTd DataLabel="Horario">@context.tipoHorario</MudTd>
+                <MudTd DataLabel="Ubicación">@context.Location</MudTd>
+                <MudTd DataLabel="Lat / Lon">@context.Latitude, @context.Longitude</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private List<LocationEntry> entries = new();
+    private bool _loading = true;
+    private string _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await DatabaseService.OpenAsync();
+            entries = await DatabaseService.GetAllEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = "No se pudo cargar el histórico en Windows.";
+            try { await AlertService.ShowLongToastAsync($"{_error}\n{ex.Message}"); } catch { }
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
