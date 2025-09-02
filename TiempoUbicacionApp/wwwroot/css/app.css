@@ -7,6 +7,16 @@ a, .btn-link {
     color: #006bb7;
 }
 
+.coord-link {
+    color: #1E90FF;
+    text-decoration: underline;
+}
+
+    .coord-link:hover {
+        color: #63B3ED;
+    }
+
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;

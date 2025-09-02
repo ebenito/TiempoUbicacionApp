@@ -1,9 +1,10 @@
 ﻿@using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
+@using TiempoUbicacionApp.Helpers
 @inject LocationDatabaseService DatabaseService
 @inject IAlertService AlertService
 
-<h3 style="margin:0 0 12px 0">Historial (Android)</h3>
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4" Style="margin:10px 0 12px 0">📜 Histórico de registros</MudText>
 
 @if (_loading)
 {
@@ -21,14 +22,23 @@ else
 {
     <ul style="list-style:none;padding:0;margin:0">
         @foreach (var e in entries)
-        {
+        {           
             <li style="background:#fff;border-radius:12px;padding:12px;margin:10px 0;
                                box-shadow:0 4px 10px rgba(0,0,0,.08)">
                 <div style="font-weight:600;margin-bottom:6px">@e.fechaActual</div>
                 <div>🕒 Local: @e.horaLocal · 🌍 UTC: @e.horaUtc · (@e.desfase)</div>
                 <div>⏱ @e.tipoHorario</div>
                 <div>📍 @e.Location</div>
-                <div>🧭 @e.Latitude, @e.Longitude</div>
+               
+                @{var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(e.Latitude, e.Longitude);}
+                @if (!string.IsNullOrEmpty(mapUrl))
+                {
+                    <div>🧭 <a href="@mapUrl" target="_blank" class="coord-link">@e.Latitude, @e.Longitude</a></div>
+                }
+                else
+                {
+                    <div>🧭 @e.Latitude, @e.Longitude</div>
+                }
             </li>
         }
     </ul>
@@ -37,7 +47,7 @@ else
 @code {
     private List<LocationEntry> entries = new();
     private bool _loading = true;
-    private string _error;
+    private string _error = "";
 
     protected override async Task OnInitializedAsync()
     {

@@ -1,11 +1,12 @@
 ﻿@using MudBlazor
+@using TiempoUbicacionApp.Helpers
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
 @inject LocationDatabaseService DatabaseService
 @inject IAlertService AlertService
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5" Class="mb-2">Historial</MudText>
+    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4" >📜 Histórico de registros</MudText>
 
     @if (_loading)
     {
@@ -36,7 +37,24 @@
                 <MudTd DataLabel="UTC">@context.horaUtc (@context.desfase)</MudTd>
                 <MudTd DataLabel="Horario">@context.tipoHorario</MudTd>
                 <MudTd DataLabel="Ubicación">@context.Location</MudTd>
-                <MudTd DataLabel="Lat / Lon">@context.Latitude, @context.Longitude</MudTd>
+                <MudTd DataLabel="Lat / Lon">
+                    @{
+                        var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(context.Latitude, context.Longitude);
+                        var hasCoordinates = !string.IsNullOrEmpty(context.Latitude) && !string.IsNullOrEmpty(context.Longitude);
+                    }
+                    @if (!string.IsNullOrEmpty(mapUrl))
+                    {
+                        <MudLink Href="@mapUrl" Target="_blank" Class="coord-link">@context.Latitude, @context.Longitude</MudLink>
+                    }
+                    else if (hasCoordinates)
+                    {
+                        <span>@context.Latitude, @context.Longitude</span>
+                    }
+                    else
+                    {
+                        <span>N/A</span>
+                    }
+                </MudTd>
             </RowTemplate>
         </MudTable>
     }
@@ -45,7 +63,7 @@
 @code {
     private List<LocationEntry> entries = new();
     private bool _loading = true;
-    private string _error;
+    private string _error = "";
 
     protected override async Task OnInitializedAsync()
     {
