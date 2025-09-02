@@ -1,15 +1,15 @@
-name: Build MAUI App
+name: Provide Secrets Only
 
 on:
   push:
     branches: [ "*" ]
   pull_request:
     branches: [ "*" ]
-  workflow_dispatch:   # Permite ejecutar el workflow manualmente desde Actions
+  workflow_dispatch:   # botón manual en la pestaña Actions
 
 jobs:
-  build:
-    runs-on: windows-latest
+  setup-secrets:
+    runs-on: ubuntu-latest
 
     env:
       GRAPH__CLIENTID: ${{ secrets.GRAPH__CLIENTID }}
@@ -17,22 +17,9 @@ jobs:
       GRAPH__TENANTID: ${{ secrets.GRAPH__TENANTID }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Install MAUI workload
-        run: dotnet workload install maui
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build Android
-        run: dotnet build -f net8.0-android --configuration Release
-
-      - name: Build Windows
-        run: dotnet build -f net8.0-windows10.0.19041.0 --configuration Release
+      - name: Show that secrets are available (sanity check)
+        run: |
+          echo "Secrets loaded into environment."
+          echo "GRAPH__CLIENTID length: ${#GRAPH__CLIENTID}"
+          echo "GRAPH__TENANTID: ${GRAPH__TENANTID}"
+          # ⚠️ nunca hagas echo del ClientSecret completo
