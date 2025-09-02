@@ -14,8 +14,15 @@ namespace TiempoUbicacionApp.Services
     public interface IOneDriveService
     {
         Task<bool> EnsureSignInAsync(); // opcional, para forzar login antes
+
+        public Task BackupDatabaseAsync(); 
+
+        public Task RestoreDatabaseAsync();
+
         Task UploadBackupAsync(string localFilePath, string remoteFileName = "backup.db");
+
         Task DownloadBackupAsync(string localFilePath, string remoteFileName = "backup.db");
+
         bool IsSignedIn { get; }
     }
 
@@ -216,7 +223,6 @@ namespace TiempoUbicacionApp.Services
             }
         }
 
-
         private async Task<string> GetAccessTokenAsync()
         {
             try
@@ -280,5 +286,39 @@ namespace TiempoUbicacionApp.Services
                 throw new InvalidOperationException($"Error creando carpeta: {(int)createResp.StatusCode} {createResp.ReasonPhrase}\n{body}");
             }
         }
+
+        public async Task BackupDatabaseAsync()
+        {
+            try
+            {
+                var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+                if (!File.Exists(dbPath))
+                    throw new FileNotFoundException("La base de datos local no existe.", dbPath);
+
+                await UploadBackupAsync(dbPath, "backup.db");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error al realizar el backup en OneDrive.", ex);
+            }
+        }
+
+        public async Task RestoreDatabaseAsync()
+        {
+            try
+            {
+                var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+                await DownloadBackupAsync(dbPath, "backup.db");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error al restaurar el backup desde OneDrive.", ex);
+            }
+        }
+
+
+
     }
 }

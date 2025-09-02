@@ -6,7 +6,31 @@
 @inject IAlertService AlertService
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4" >📜 Histórico de registros</MudText>
+    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">📜 Histórico de registros</MudText>
+
+    <MudStack Row="true" Spacing="2" Class="mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnBackup" Style="min-width: 165px;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Medium" />
+                <span>Backup</span>
+            </MudStack>
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="OnRestore" Style="min-width: 165px;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.CloudDownload" Size="Size.Medium" />
+                <span>Restaurar</span>
+            </MudStack>
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OnRefresh" Style="min-width: 165px;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Refresh" Size="Size.Medium" />
+                <span>Refrescar</span>
+            </MudStack>
+        </MudButton>
+
+    </MudStack>
 
     @if (_loading)
     {
@@ -16,13 +40,13 @@
     {
         <MudAlert Severity="Severity.Error">@_error</MudAlert>
     }
-    else if (entries.Count == 0)
+    else if (@Entries.Count() == 0)
     {
         <MudAlert Severity="Severity.Info">No hay registros guardados.</MudAlert>
     }
     else
     {
-        <MudTable Items="entries" Dense="true" Hover="true" Bordered="true" Elevation="0">
+        <MudTable Items="@Entries" Dense="true" Hover="true" Bordered="true" Elevation="0">
             <HeaderContent>
                 <MudTh>Fecha</MudTh>
                 <MudTh>Hora Local</MudTh>
@@ -61,7 +85,12 @@
 </MudPaper>
 
 @code {
-    private List<LocationEntry> entries = new();
+    [Parameter] public IEnumerable<LocationEntry> Entries { get; set; } = Enumerable.Empty<LocationEntry>();
+
+    [Parameter] public EventCallback OnBackup { get; set; }
+    [Parameter] public EventCallback OnRestore { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
     private bool _loading = true;
     private string _error = "";
 
@@ -70,7 +99,6 @@
         try
         {
             await DatabaseService.OpenAsync();
-            entries = await DatabaseService.GetAllEntriesAsync();
         }
         catch (Exception ex)
         {
@@ -82,4 +110,5 @@
             _loading = false;
         }
     }
+
 }

@@ -1,22 +1,81 @@
 ﻿@page "/history"
 @using Microsoft.Maui.Devices
+@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@inject IOneDriveService BackupService
+@inject IAlertService AlertService
 
 @if (_isAndroid)
 {
-    <AndroidHistory />
+    <AndroidHistory OnBackup="DoBackup" OnRestore="DoRestore" />
 }
 else
 {
-    <DesktopHistory />
+    <DesktopHistory Entries="entries" OnBackup="DoBackup" OnRestore="DoRestore" OnRefresh="RefreshHistory" />
 }
 
 @code {
+    [Inject] private LocationDatabaseService LocationDatabaseService { get; set; }
+
     private bool _isAndroid;
+    private List<LocationEntry> entries = new();
+
 
     protected override void OnInitialized()
     {
         // Detección en tiempo de ejecución
         _isAndroid = DeviceInfo.Current.Platform == DevicePlatform.Android;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntriesAsync();
+    }
+
+    private async Task LoadEntriesAsync()
+    {
+        try
+        {
+            entries = await LocationDatabaseService.GetAllEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowToastAsync($"Error cargando historial: {ex.Message}");
+        }
+    }
+
+    private async Task DoBackup()
+    {
+        try
+        {
+            await BackupService.BackupDatabaseAsync();
+            await AlertService.ShowToastAsync("✅ Copia de seguridad en OneDrive realizada.");
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowLongToastAsync("❌ Error al hacer backup:\n" + ex.Message);
+        }
+    }
+
+    private async Task DoRestore()
+    {
+        try
+        {
+            await BackupService.RestoreDatabaseAsync();
+            await LoadEntriesAsync(); // importante refrescar tras restaurar
+            await AlertService.ShowToastAsync("✅ Restauración desde OneDrive completada.");
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowLongToastAsync("❌ Error al restaurar:\n" + ex.Message);
+        }
+    }
+
+    private async Task RefreshHistory()
+    {
+        await LoadEntriesAsync();
+        StateHasChanged(); // fuerza el refresco de la vista
+        await AlertService.ShowToastAsync("🔄 Histórico actualizado");
     }
 }
 
