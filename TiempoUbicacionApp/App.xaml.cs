@@ -39,6 +39,7 @@ namespace TiempoUbicacionApp
         private void HandleUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
             Debug.WriteLine($"[UNOBSERVED] {e.Exception?.Message}");
+            
             e.SetObserved();
         }
     }

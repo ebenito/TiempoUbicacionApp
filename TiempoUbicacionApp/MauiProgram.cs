@@ -3,6 +3,10 @@ using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using TiempoUbicacionApp.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
+
+
 
 #if ANDROID
 using TiempoUbicacionApp.Platforms.Android;
@@ -26,23 +30,39 @@ namespace TiempoUbicacionApp
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-#if DEBUG
-            // Cargar secretos solo en desarrollo
-            builder.Configuration              
-                .AddUserSecrets("tiempo-ubicacion-app-12345")     //.AddUserSecrets<App>()
+            builder.Services.AddHttpClient(); // para el HttpClient de DI (Dependency Injection)
+
+            // Cargar secretos
+            builder.Configuration
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
+
+
+#if ANDROID           
+            var assembly = Assembly.GetExecutingAssembly(); 
+            using var stream = assembly.GetManifestResourceStream("appsettings.android.json");
+            builder.Configuration.AddJsonStream(stream);
+
+            //builder.Configuration.AddJsonFile("appsettings.android.json", optional: true, reloadOnChange: true);
 #endif
 
-            builder.Services.AddHttpClient(); // para el HttpClient de DI
+#if WINDOWS
+            builder.Configuration.AddJsonFile("appsettings.windows.json", optional: true, reloadOnChange: true);
+#endif
 
+            // Servicio OneDrive
             builder.Services.AddSingleton<IOneDriveService>(sp =>
             {
                 var cfg = sp.GetRequiredService<IConfiguration>();
                 var clientId = cfg["Graph:ClientId"];
+                var clientSecret = cfg["Graph:ClientSecret"];
                 var tenantId = cfg["Graph:TenantId"] ?? "common";
+
+                if (string.IsNullOrEmpty(clientId))
+                    throw new InvalidOperationException("ClientId de OneDrive no está configurado en appsettings.json");
+
                 return new OneDriveService(clientId!, tenantId);
             });
-
 
             builder.Services.AddMauiBlazorWebView();
 

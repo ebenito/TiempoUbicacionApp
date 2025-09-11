@@ -1,6 +1,8 @@
 ﻿@using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
 @using TiempoUbicacionApp.Helpers
+@using Microsoft.Maui.ApplicationModel.DataTransfer;
+
 @inject LocationDatabaseService DatabaseService
 @inject IAlertService AlertService
 
@@ -20,6 +22,11 @@
     <button style="padding:8px 14px; border-radius:8px; background:#3F8C80; color:white; border:none"
             @onclick="OnRefresh">
         🔄 Refrescar
+    </button>
+
+    <button style="padding:8px 14px; border-radius:8px; background:#1976d2; color:white; border:none"
+            @onclick="SendDbByEmail">
+        Enviar BD por Email
     </button>
 </div>
 
@@ -92,4 +99,65 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
+
+    private async Task SendDbByEmail()
+    {
+        await ShareDatabaseAsync();
+    }
+
+    public async Task ShareDatabaseAsync()
+    {
+        try
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+            if (!File.Exists(dbPath))
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                return;
+            }
+
+            await Share.Default.RequestAsync(new ShareFileRequest
+            {
+                Title = "Backup de la BD",
+                File = new ShareFile(dbPath)
+            });
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo compartir la BD: {ex.Message}", "OK");
+        }
+    }
+
+    public async Task SendDatabaseByEmailAsync()
+    {
+        try
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+            if (!File.Exists(dbPath))
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                return;
+            }
+
+            var message = new EmailMessage
+            {
+                Subject = "Backup de BD TiempoUbicacionApp",
+                Body = "Adjunto el archivo de la base de datos.",
+                To = new List<string> { "tu_correo@ejemplo.com" }
+            };
+
+            // Adjuntar la BD
+            message.Attachments.Add(new EmailAttachment(dbPath));
+
+            await Email.Default.ComposeAsync(message);
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo enviar la BD: {ex.Message}", "OK");
+        }
+    }
+
+
 }

@@ -52,11 +52,28 @@ namespace TiempoUbicacionApp.Services
             _clientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
             _tenantId = tenantId ?? "common";
 
+//            string redirectUri;
+
+//#if ANDROID
+//            redirectUri = $"msal{clientId}://auth";
+//#elif WINDOWS
+//            redirectUri = "http://localhost";
+//#else
+//            redirectUri = "http://localhost"; // por defecto
+//#endif
+
             _pca = PublicClientApplicationBuilder
                 .Create(_clientId)
                 .WithAuthority(AzureCloudInstance.AzurePublic, "common")
-                //.WithTenantId(_tenantId)
-                .WithRedirectUri("http://localhost") // Windows. Para Android ver notas debajo.
+                .WithTenantId(_tenantId)
+                .WithRedirectUri(DeviceInfo.Platform == DevicePlatform.Android
+                    ? $"msauth://com.tubkala.tiempoubicacionapp/CRsLggXTYeQ3Z3boFPoWqry4+q8="
+                    : "https://login.microsoftonline.com/common/oauth2/nativeclient")
+                //.WithRedirectUri("msala1edcec29bba4023a28e1fce56301c80")
+                .WithLogging((level, message, containsPii) =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"MSAL [{level}] {message}");
+                }, LogLevel.Verbose, enablePiiLogging: true, enableDefaultPlatformLogging: true)
                 .Build();
 
             _http = httpClient ?? new HttpClient();
@@ -223,28 +240,76 @@ namespace TiempoUbicacionApp.Services
             }
         }
 
+        private async Task<AuthenticationResult> AcquireInteractiveAsync()
+        {
+#if ANDROID
+            var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+            return await _pca.AcquireTokenInteractive(_scopes)
+                .WithParentActivityOrWindow(activity)
+                .WithPrompt(Prompt.SelectAccount)
+                .ExecuteAsync();
+#else
+
+            return await _pca.AcquireTokenInteractive(_scopes)
+                    .WithPrompt(Prompt.SelectAccount)
+                    .ExecuteAsync();
+#endif
+        }
+
         private async Task<string> GetAccessTokenAsync()
         {
             try
             {
                 var accounts = await _pca.GetAccountsAsync();
-                _account = accounts.FirstOrDefault();
-                if (_account != null)
+                var first = accounts.FirstOrDefault();
+                if (first != null)
                 {
-                    var silent = await _pca.AcquireTokenSilent(_scopes, _account).ExecuteAsync();
+                    var silent = await _pca.AcquireTokenSilent(_scopes, first).ExecuteAsync();
                     return silent.AccessToken;
                 }
             }
-            catch { /* interactivo abajo */ }
+            catch (MsalUiRequiredException)
+            {
+                // Necesita interacción
+            }
 
-            var result = await _pca.AcquireTokenInteractive(_scopes)
-                .WithUseEmbeddedWebView(false)
-                .WithPrompt(Prompt.SelectAccount)
-                .ExecuteAsync();
-
-            _account = result.Account;
-            return result.AccessToken;
+            var interactive = await AcquireInteractiveAsync();
+            return interactive.AccessToken;
         }
+
+        //        private async Task<string> GetAccessTokenAsync()
+        //        {
+        //            AuthenticationResult result;
+
+        //            try
+        //            {
+        //                var accounts = await _pca.GetAccountsAsync();
+        //                _account = accounts.FirstOrDefault();
+        //                if (_account != null)
+        //                {
+        //                    var silent = await _pca.AcquireTokenSilent(_scopes, _account).ExecuteAsync();
+        //                    return silent.AccessToken;
+        //                }
+        //            }
+        //            catch { /* interactivo abajo */ }
+
+
+        //#if ANDROID
+        //            var activity = Platform.CurrentActivity; // viene de Microsoft.Maui.ApplicationModel
+        //            result = await _pca.AcquireTokenInteractive(_scopes)
+        //                .WithParentActivityOrWindow(activity)
+        //                .ExecuteAsync();
+        //#else
+        //            result = await _pca.AcquireTokenInteractive(_scopes)
+        //                .WithUseEmbeddedWebView(false)
+        //                .WithPrompt(Prompt.SelectAccount)
+        //                .ExecuteAsync();
+        //#endif
+
+
+        //            _account = result.Account;
+        //            return result.AccessToken;
+        //        }
 
         private async Task EnsureAppFolderAsync(string token)
         {

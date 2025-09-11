@@ -7,7 +7,7 @@
 
 @if (_isAndroid)
 {
-    <AndroidHistory OnBackup="DoBackup" OnRestore="DoRestore" />
+    <AndroidHistory Entries="entries" OnBackup="DoBackup" OnRestore="DoRestore" OnRefresh="RefreshHistory" />
 }
 else
 {
@@ -41,6 +41,7 @@ else
         catch (Exception ex)
         {
             await AlertService.ShowToastAsync($"Error cargando historial: {ex.Message}");
+            entries = new List<LocationEntry>();
         }
     }
 
