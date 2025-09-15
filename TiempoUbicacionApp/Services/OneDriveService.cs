@@ -67,9 +67,9 @@ namespace TiempoUbicacionApp.Services
                 .WithAuthority(AzureCloudInstance.AzurePublic, "common")
                 .WithTenantId(_tenantId)
                 .WithRedirectUri(DeviceInfo.Platform == DevicePlatform.Android
-                    ? $"msauth://com.tubkala.tiempoubicacionapp/CRsLggXTYeQ3Z3boFPoWqry4+q8="
+                    ? $"msauth://com.tubkala.tiempoubicacionapp/[aqui hash paquete]"
                     : "https://login.microsoftonline.com/common/oauth2/nativeclient")
-                //.WithRedirectUri("msala1edcec29bba4023a28e1fce56301c80")
+                //.WithRedirectUri("msal[aqui ClientID]")
                 .WithLogging((level, message, containsPii) =>
                 {
                     System.Diagnostics.Debug.WriteLine($"MSAL [{level}] {message}");
