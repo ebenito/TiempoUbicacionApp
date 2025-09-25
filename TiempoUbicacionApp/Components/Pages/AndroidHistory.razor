@@ -1,0 +1,260 @@
+﻿@using System.Text
+@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@using TiempoUbicacionApp.Helpers
+@using Microsoft.Maui.ApplicationModel.DataTransfer;
+@using Microsoft.Maui.Storage;
+@using System.IO;
+@using System.Threading.Tasks;
+
+@inject LocationDatabaseService DatabaseService
+@inject IAlertService AlertService
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4" Style="margin:10px 0 12px 0">📜 Histórico de registros</MudText>
+
+<div style="margin-bottom:12px; display:flex; gap:10px">
+    <button style="padding:8px 14px; border-radius:8px; background:#1976d2; color:white; border:none"
+            @onclick="OnBackup">
+        ☁️ Backup
+    </button>
+
+    <button style="padding:8px 14px; border-radius:8px; background:#388e3c; color:white; border:none"
+            @onclick="OnRestore">
+        ⬇️ Restaurar
+    </button>
+
+    <button style="padding:8px 14px; border-radius:8px; background:#3F8C80; color:white; border:none"
+            @onclick="OnRefresh">
+        🔄 Refrescar
+    </button>
+
+    <button style="padding:8px 14px; border-radius:8px; background:#1976d2; color:white; border:none"
+            @onclick="SendDbByEmail">
+        Enviar BD por Email
+    </button>
+</div>
+
+@if (_loading)
+{
+    <p>Cargando…</p>
+}
+else if (!string.IsNullOrEmpty(_error))
+{
+    <div style="background:#fdecea;color:#c0392b;padding:10px;border-radius:8px">@_error</div>
+}
+else if (entries.Count == 0)
+{
+    <div style="opacity:.7">No hay registros guardados.</div>
+}
+else
+{
+    <ul style="list-style:none;padding:0;margin:0">
+        @foreach (var e in @Entries)
+        {           
+            <li style="background:#fff;border-radius:12px;padding:12px;margin:10px 0;
+                               box-shadow:0 4px 10px rgba(0,0,0,.08)">
+                <div style="font-weight:600;margin-bottom:6px">@e.fechaActual</div>
+                <div>🕒 Local: @e.horaLocal · 🌍 UTC: @e.horaUtc · (@e.desfase)</div>
+                <div>⏱ @e.tipoHorario</div>
+                <div>📍 @e.Location</div>
+               
+                @{var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(e.Latitude, e.Longitude);}
+                @if (!string.IsNullOrEmpty(mapUrl))
+                {
+                    <div>🧭 <a href="@mapUrl" target="_blank" class="coord-link">@e.Latitude, @e.Longitude</a></div>
+                }
+                else
+                {
+                    <div>🧭 @e.Latitude, @e.Longitude</div>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter] public IEnumerable<LocationEntry> Entries { get; set; } = Enumerable.Empty<LocationEntry>();
+
+    [Parameter] public EventCallback OnBackup { get; set; }
+    [Parameter] public EventCallback OnRestore { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    private List<LocationEntry> entries = new();
+    private bool _loading = true;
+    private string _error = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Asegura DB abierta sin bloquear el UI thread (Android es sensible a deadlocks)
+            await DatabaseService.OpenAsync().ConfigureAwait(false);
+            var list = await DatabaseService.GetAllEntriesAsync().ConfigureAwait(false);
+            entries = list ?? new List<LocationEntry>();
+        }
+        catch (Exception ex)
+        {
+            _error = "No se pudo cargar el histórico en Android.";
+            try { await AlertService.ShowLongToastAsync($"{_error}\n{ex.Message}"); } catch { /* no romper */ }
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SendDbByEmail()
+    {
+        await SendDatabaseByEmailAsync();
+    }
+
+    public async Task ShareDatabaseAsync()
+    {
+        try
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+            if (!File.Exists(dbPath))
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                return;
+            }
+
+            await Share.Default.RequestAsync(new ShareFileRequest
+            {
+                Title = "Backup de la BD",
+                File = new ShareFile(dbPath)
+            });
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo compartir la BD: {ex.Message}", "OK");
+        }
+    }
+
+    public async Task RestoreDatabaseAsync(LocationDatabaseService dbService)
+    {
+        try
+        {
+            // 1) Define tipos aceptados por plataforma
+            var sqliteFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+            {
+                { DevicePlatform.Android, new[] { "application/x-sqlite3", "application/octet-stream", ".db", ".sqlite", ".sqlite3" } },
+                { DevicePlatform.WinUI,   new[] { ".db", ".sqlite", ".sqlite3" } },
+                { DevicePlatform.macOS,   new[] { ".db", ".sqlite", ".sqlite3" } },
+                { DevicePlatform.iOS,     new[] { "public.database", ".db", ".sqlite", ".sqlite3" } }
+            });
+
+            var pickOptions = new PickOptions
+            {
+                PickerTitle = "Selecciona el archivo de backup (.db)",
+                FileTypes = sqliteFileType
+            };
+
+            // 2) Abrir selector
+            var result = await FilePicker.Default.PickAsync(pickOptions);
+            if (result == null)
+                return; // usuario canceló
+
+            // 3) Copiar a un temporal en cache
+            var tempFile = Path.Combine(FileSystem.CacheDirectory, $"restore_{Guid.NewGuid()}.db");
+            using (var src = await result.OpenReadAsync())
+            using (var dst = File.Create(tempFile))
+            {
+                await src.CopyToAsync(dst);
+            }
+
+            // 4) Validar: cabecera SQLite "SQLite format 3\0"
+            bool isSqlite = false;
+            using (var fs = File.OpenRead(tempFile))
+            {
+                var header = new byte[16];
+                var read = await fs.ReadAsync(header, 0, header.Length);
+                var headerStr = Encoding.ASCII.GetString(header, 0, Math.Max(0, read));
+                isSqlite = headerStr.StartsWith("SQLite format 3");
+            }
+
+            if (!isSqlite)
+            {
+                File.Delete(tempFile);
+                await Application.Current.MainPage.DisplayAlert("Restaurar", "El archivo seleccionado no parece una base de datos SQLite válida.", "OK");
+                return;
+            }
+
+            // 5) Preparar rutas y backup local
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+            var backupPath = Path.Combine(FileSystem.AppDataDirectory, $"Ubicaciones_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+
+            // 6) Cerrar BD si está abierta
+            var wasOpen = dbService.IsOpen;
+            if (wasOpen)
+                await dbService.CloseAsync();
+
+            // 7) Hacer copia de seguridad del fichero actual (si existe)
+            if (File.Exists(dbPath))
+            {
+                File.Copy(dbPath, backupPath, overwrite: true);
+            }
+
+            // 8) Sobrescribir la BD actual con el temporal
+            File.Copy(tempFile, dbPath, overwrite: true);
+
+            // 9) Reabrir BD si estaba abierta
+            if (wasOpen)
+                await dbService.OpenAsync();
+
+            // 10) Limpiar temporal
+            try { File.Delete(tempFile); } catch { /* ignore */ }
+
+            await Application.Current.MainPage.DisplayAlert("Restaurar", "La base de datos se ha restaurado correctamente.", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo restaurar la BD: {ex.Message}", "OK");
+        }
+    }
+
+    public async Task SendDatabaseByEmailAsync()
+    {
+        try
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+            if (!File.Exists(dbPath))
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                return;
+            }
+
+            var message = new EmailMessage
+            {
+                Subject = "Backup de BD TiempoUbicacionApp",
+                Body = "Adjunto el archivo de la base de datos."
+                //, To = new List<string> { "tu_correo@ejemplo.com" }
+            };
+
+            // Adjuntar la BD
+            message.Attachments.Add(new EmailAttachment(dbPath));
+
+            if (DeviceInfo.Current.Platform == DevicePlatform.WinUI)
+            {
+                var mailto = $"mailto:tu_correo@ejemplo.com?subject=Backup%20TiempoUbicacionApp&body=Adjunta%20la%20BD%20manualmente.";
+                await Launcher.Default.OpenAsync(mailto);
+            }
+            else
+            {
+                await Email.Default.ComposeAsync(message);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo enviar la BD: {ex.Message}", "OK");
+        }
+    }
+
+    
+
+
+}

@@ -1,72 +1,192 @@
 ﻿@page "/history"
+@using Microsoft.Maui.Devices
+@using System.Text
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
-@inject LocationDatabaseService DatabaseService
+@inject IAlertService AlertService
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-
-    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4" Style="margin-left: 4vw;">📜 Historial de registros</MudText>
-
-    @if (entries == null)
-    {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
-    }
-    else if (!entries.Any())
-    {
-        <MudAlert Severity="Severity.Info" Elevation="1">No hay registros guardados.</MudAlert>
-    }
-    else
-    {
-        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-            <MudCard>
-                <MudCardHeader>
-                    <MudText Typo="Typo.h6">Histórico de datos</MudText>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudTable Items="@entries" Dense="true" Hover="true" Bordered="true" Striped="true">
-                        <HeaderContent>
-                            <MudTh>Fecha</MudTh>
-                            <MudTh>Hora Local</MudTh>
-                            <MudTh>UTC</MudTh>
-                            <MudTh>Ubicación</MudTh>
-                            <MudTh>Coordenadas</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Fecha">@context.fechaActual</MudTd>
-                            <MudTd DataLabel="Hora Local">@context.horaLocal</MudTd>
-                            <MudTd DataLabel="UTC">@context.horaUtc <span> - Desfase: @context.desfase</span><br /><span>@context.tipoHorario</span></MudTd>
-                            <MudTd DataLabel="Ubicación">@context.Location</MudTd>
-                            <MudTd DataLabel="Coordenadas:"><span>Latitud: @context.Latitude</span> <br /><span>Longitud: @context.Longitude</span></MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                </MudCardContent>
-            </MudCard>
-        </MudContainer>
-
-       @*  <MudGrid GutterSize="3">
-            @foreach (var entry in entries)
-            {
-                <MudItem xs="12">
-                    <MudPaper Class="p-4 entry-card" Elevation="1" Style="background-color: #D7CCC8;">
-                        <MudText Typo="Typo.h6" Color="Color.Secondary">   @entry.fechaActual — @entry.horaLocal (@entry.tipoHorario)</MudText>
-                        <MudDivider Class="my-2" />
-                        <MudText><strong>UTC:</strong> @entry.horaUtc</MudText>
-                        <MudText><strong>Desfase:</strong> @entry.desfase</MudText>
-                        <MudText><strong>Ubicación:</strong> @entry.Location</MudText>
-                        <MudText><strong>Coordenadas:</strong><span>Lat.:</span> @entry.Latitude, <span>Long.:</span> @entry.Longitude</MudText>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid> *@
-    }
-
-</MudContainer>
+@if (_isAndroid)
+{
+    <AndroidHistory Entries="entries" OnBackup="DoBackup" OnRestore="DoRestore" OnRefresh="RefreshHistory" />
+}
+else
+{
+    <DesktopHistory Entries="entries" OnBackup="DoBackup" OnRestore="DoRestore" OnRefresh="RefreshHistory" />
+}
 
 @code {
-    private List<LocationEntry> entries;
+    [Inject] private LocationDatabaseService LocationDatabaseService { get; set; }
+
+    private bool _isAndroid;
+    private List<LocationEntry> entries = new();
+
+
+    protected override void OnInitialized()
+    {
+        // Detección en tiempo de ejecución
+        _isAndroid = DeviceInfo.Current.Platform == DevicePlatform.Android;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        entries = await DatabaseService.GetAllEntriesAsync();
+        await LoadEntriesAsync();
     }
+
+    private async Task LoadEntriesAsync()
+    {
+        try
+        {
+            entries = await LocationDatabaseService.GetAllEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowToastAsync($"Error cargando historial: {ex.Message}");
+            entries = new List<LocationEntry>();
+        }
+    }
+
+    private async Task DoBackup()
+    {
+        try
+        {
+            //await BackupService.BackupDatabaseAsync();
+            await ShareDatabaseAsync();
+            await AlertService.ShowToastAsync("✅ Copia de seguridad en OneDrive realizada.");
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowLongToastAsync("❌ Error al hacer backup:\n" + ex.Message);
+        }
+    }
+
+    private async Task DoRestore()
+    {
+        try
+        {
+            //await BackupService.RestoreDatabaseAsync();
+            await RestoreDatabaseAsync(LocationDatabaseService);
+            await LoadEntriesAsync(); // importante refrescar tras restaurar
+            await AlertService.ShowToastAsync("✅ Restauración desde OneDrive completada.");
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowLongToastAsync("❌ Error al restaurar:\n" + ex.Message);
+        }
+    }
+
+    private async Task RefreshHistory()
+    {
+        await LoadEntriesAsync();
+        StateHasChanged(); // fuerza el refresco de la vista
+        await AlertService.ShowToastAsync("🔄 Histórico actualizado");
+    }
+
+
+
+    public async Task ShareDatabaseAsync()
+    {
+        try
+        {
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+
+            if (!File.Exists(dbPath))
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                return;
+            }
+
+            await Share.Default.RequestAsync(new ShareFileRequest
+            {
+                Title = "Backup de la BD",
+                File = new ShareFile(dbPath)
+            });
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo compartir la BD: {ex.Message}", "OK");
+        }
+    }
+
+    public async Task RestoreDatabaseAsync(LocationDatabaseService dbService)
+    {
+        try
+        {
+            // 1) Define tipos aceptados por plataforma
+            var sqliteFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+            {
+                { DevicePlatform.Android, new[] { "application/x-sqlite3", "application/octet-stream", ".db", ".sqlite", ".sqlite3" } },
+                { DevicePlatform.WinUI,   new[] { ".db", ".sqlite", ".sqlite3" } },
+                { DevicePlatform.macOS,   new[] { ".db", ".sqlite", ".sqlite3" } },
+                { DevicePlatform.iOS,     new[] { "public.database", ".db", ".sqlite", ".sqlite3" } }
+            });
+
+            var pickOptions = new PickOptions
+            {
+                PickerTitle = "Selecciona el archivo de backup (.db)",
+                FileTypes = sqliteFileType
+            };
+
+            // 2) Abrir selector
+            var result = await FilePicker.Default.PickAsync(pickOptions);
+            if (result == null)
+                return; // usuario canceló
+
+            // 3) Copiar a un temporal en cache
+            var tempFile = Path.Combine(FileSystem.CacheDirectory, $"restore_{Guid.NewGuid()}.db");
+            using (var src = await result.OpenReadAsync())
+            using (var dst = File.Create(tempFile))
+            {
+                await src.CopyToAsync(dst);
+            }
+
+            // 4) Validar: cabecera SQLite "SQLite format 3\0"
+            bool isSqlite = false;
+            using (var fs = File.OpenRead(tempFile))
+            {
+                var header = new byte[16];
+                var read = await fs.ReadAsync(header, 0, header.Length);
+                var headerStr = Encoding.ASCII.GetString(header, 0, Math.Max(0, read));
+                isSqlite = headerStr.StartsWith("SQLite format 3");
+            }
+
+            if (!isSqlite)
+            {
+                File.Delete(tempFile);
+                await Application.Current.MainPage.DisplayAlert("Restaurar", "El archivo seleccionado no parece una base de datos SQLite válida.", "OK");
+                return;
+            }
+
+            // 5) Preparar rutas y backup local
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
+            var backupPath = Path.Combine(FileSystem.AppDataDirectory, $"Ubicaciones_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+
+            // 6) Cerrar BD si está abierta
+            var wasOpen = dbService.IsOpen;
+            if (wasOpen)
+                await dbService.CloseAsync();
+
+            // 7) Hacer copia de seguridad del fichero actual (si existe)
+            if (File.Exists(dbPath))
+            {
+                File.Copy(dbPath, backupPath, overwrite: true);
+            }
+
+            // 8) Sobrescribir la BD actual con el temporal
+            File.Copy(tempFile, dbPath, overwrite: true);
+
+            // 9) Reabrir BD si estaba abierta
+            if (wasOpen)
+                await dbService.OpenAsync();
+
+            // 10) Limpiar temporal
+            try { File.Delete(tempFile); } catch { /* ignore */ }
+
+            await Application.Current.MainPage.DisplayAlert("Restaurar", "La base de datos se ha restaurado correctamente.", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo restaurar la BD: {ex.Message}", "OK");
+        }
+    }
+
 }

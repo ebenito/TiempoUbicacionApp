@@ -1,45 +1,74 @@
 ﻿using SQLite;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TiempoUbicacionApp.Models;
 
 namespace TiempoUbicacionApp.Services
 {
     public class LocationDatabaseService
     {
-        private readonly SQLiteAsyncConnection _db;
+        private SQLiteAsyncConnection _db;
+        private readonly string _dbPath;
+
+        public bool IsOpen => _db != null;
 
         public LocationDatabaseService()
         {
-            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
-            _db = new SQLiteAsyncConnection(dbPath);
-            _db.CreateTableAsync<LocationEntry>().Wait();
+            _dbPath = Path.Combine(FileSystem.AppDataDirectory, "Ubicaciones.db");
         }
 
         public async Task InitAsync()
         {
+            if (_db == null)
+            {
+                _db = new SQLiteAsyncConnection(_dbPath);
+                await _db.CreateTableAsync<LocationEntry>();
+            }
+        }
+
+        public async Task OpenAsync()
+        {
+            if (_db == null)
+            {
+                _db = new SQLiteAsyncConnection(_dbPath);
+                await _db.CreateTableAsync<LocationEntry>();
+            }
+        }
+
+        public async Task CloseAsync()
+        {
+            _db = null;
             await Task.CompletedTask;
         }
 
-        public Task SaveEntryAsync(LocationEntry entry)
+        public async Task ReopenAsync()
         {
-            if (entry.Latitude == "" || entry.Longitude == "")
+            await CloseAsync();
+            await OpenAsync();
+        }
+
+        private async Task EnsureDbAsync()
+        {
+            if (_db == null)
+                await OpenAsync();
+        }
+
+        public async Task SaveEntryAsync(LocationEntry entry)
+        {
+            await EnsureDbAsync();
+
+            if (string.IsNullOrWhiteSpace(entry.Latitude) || string.IsNullOrWhiteSpace(entry.Longitude))
             {
                 entry.Latitude = "40.51.33 N";
                 entry.Longitude = "2.12.32 O";
                 entry.Location = "Olmeda de Cobeta";
             }
 
-            return _db.InsertAsync(entry);
+            await _db.InsertAsync(entry);
         }
 
-        public Task<List<LocationEntry>> GetAllEntriesAsync()
+        public async Task<List<LocationEntry>> GetAllEntriesAsync()
         {
-            return _db.Table<LocationEntry>().OrderByDescending(c => c.Id).ToListAsync();
+            await EnsureDbAsync();
+            return await _db.Table<LocationEntry>().OrderByDescending(c => c.Id).ToListAsync();
         }
     }
-
 }
