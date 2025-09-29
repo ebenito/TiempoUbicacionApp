@@ -6,14 +6,14 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
-  <Identity Name="64068EstebanBenito.TiempoUbicacin" Publisher="CN=861769EB-74FC-4B39-BFED-DFA2CEF5D924" Version="1.1.1.0" />
+  <Identity Name="64068EstebanBenito.TiempoUbicacin" Publisher="CN=AppsWP" Version="1.1.15.0" />
 
-  <mp:PhoneIdentity PhoneProductId="f7454b86-7432-422f-9b4c-cd5fdcd45a4e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="dcc0bba8-40f3-420d-b675-8e7f7766fbfb" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Tiempo &amp; Ubicación</DisplayName>
     <PublisherDisplayName>AppsWP</PublisherDisplayName>
-    <Logo>Resources\RecursosTienda\$placeholder$.png</Logo>
+    <Logo>Resources\RecursosTienda\PackageLogo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -26,16 +26,13 @@
   </Resources>
 
   <Applications>
-    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
+    <Application Id="App" Executable="$targetnametoken$.exe"  EntryPoint="MauiProgram">
       <uap:VisualElements
         DisplayName="Tiempo &amp; Ubicación"
-        Description="$placeholder$"
-        Square150x150Logo="Resources\RecursosTienda\$placeholder$.png"
-        Square44x44Logo="Resources\RecursosTienda\$placeholder$.png"
-        BackgroundColor="transparent">
-        <uap:DefaultTile Square71x71Logo="Resources\RecursosTienda\$placeholder$.png" Wide310x150Logo="Resources\RecursosTienda\$placeholder$.png" Square310x310Logo="Resources\RecursosTienda\$placeholder$.png" >
-        </uap:DefaultTile >
-        <uap:SplashScreen Image="Resources\RecursosTienda\$placeholder$.png" />
+        Description="Obten todos los datos para poner en estación tu telescopio."
+        BackgroundColor="transparent" Square150x150Logo="Resources\RecursosTienda\MediumTile.png" Square44x44Logo="Resources\RecursosTienda\AppIcon.png">
+        <uap:DefaultTile Square71x71Logo="Resources\RecursosTienda\SmallTile.png" Wide310x150Logo="Resources\RecursosTienda\WideTile.png" Square310x310Logo="Resources\RecursosTienda\LargeTile.png"/>
+        <uap:SplashScreen Image="Resources\RecursosTienda\SplashScreen.png"/>
       </uap:VisualElements>
     </Application>
   </Applications>
