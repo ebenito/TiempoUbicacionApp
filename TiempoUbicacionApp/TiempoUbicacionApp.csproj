@@ -63,6 +63,40 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="Platforms\Windows\Images\AppIcon.png" />
+      <None Remove="Platforms\Windows\Images\LargeTile.png" />
+      <None Remove="Platforms\Windows\Images\MediumTile.png" />
+      <None Remove="Platforms\Windows\Images\PackageLogo.png" />
+      <None Remove="Platforms\Windows\Images\SmallTile.png" />
+      <None Remove="Platforms\Windows\Images\SplashScreen.png" />
+      <None Remove="Platforms\Windows\Images\WideTile.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Platforms\Windows\Images\AppIcon.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Platforms\Windows\Images\LargeTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Platforms\Windows\Images\MediumTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Platforms\Windows\Images\PackageLogo.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Platforms\Windows\Images\SmallTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Platforms\Windows\Images\SplashScreen.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Platforms\Windows\Images\WideTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CommunityToolkit.Maui" Version="12.2.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.110" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.110" />
