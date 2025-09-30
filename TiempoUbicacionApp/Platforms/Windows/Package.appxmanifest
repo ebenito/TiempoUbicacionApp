@@ -6,14 +6,14 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
-  <Identity Name="maui-tiempo-ubicacion-app" Publisher="CN=User Name" Version="0.0.0.0" />
+  <Identity Name="64068EstebanBenito.TiempoUbicacin" Publisher="CN=AppsWP" Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="038A40BA-DEBE-4AAB-B247-4BA7FAB7F2D2" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>$placeholder$</DisplayName>
-    <PublisherDisplayName>User Name</PublisherDisplayName>
-    <Logo>$placeholder$.png</Logo>
+    <DisplayName>Tiempo &amp; Ubicación</DisplayName>
+	<PublisherDisplayName>AppsWP</PublisherDisplayName>
+	<Logo>Resources\RecursosTienda\PackageLogo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -26,17 +26,16 @@
   </Resources>
 
   <Applications>
-    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
-      <uap:VisualElements
-        DisplayName="Tiempo &amp; Ubicación"
-        Description="Obten todos los datos para poner en estación tu telescopio."
-        Square150x150Logo="$placeholder$.png"
-        Square44x44Logo="$placeholder$.png"
-        BackgroundColor="transparent">
-        <uap:DefaultTile Square71x71Logo="$placeholder$.png" Wide310x150Logo="$placeholder$.png" Square310x310Logo="$placeholder$.png" />
-        <uap:SplashScreen Image="$placeholder$.png" />
-      </uap:VisualElements>
-    </Application>
+	  <Application Id="App" Executable="$targetnametoken$.exe"  EntryPoint="$targetentrypoint$">
+		  <uap:VisualElements
+			DisplayName="Tiempo &amp; Ubicación"
+			Description="Obten todos los datos para poner en estación tu telescopio."
+			BackgroundColor="transparent" Square150x150Logo="Resources\RecursosTienda\MediumTile.png" Square44x44Logo="Resources\RecursosTienda\AppIcon.png">
+			  <uap:DefaultTile Square71x71Logo="Resources\RecursosTienda\SmallTile.png" Wide310x150Logo="Resources\RecursosTienda\WideTile.png" Square310x310Logo="Resources\RecursosTienda\LargeTile.png"/>
+			  <uap:SplashScreen Image="Resources\RecursosTienda\SplashScreen.png"/>
+			  <uap:LockScreen BadgeLogo="Resources\RecursosTienda\BadgeLogo.png" Notification="badgeAndTileText"/>
+		  </uap:VisualElements>
+	  </Application>
   </Applications>
 
   <Capabilities>
