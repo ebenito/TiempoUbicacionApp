@@ -10,38 +10,40 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
+<div class="app-root @( _isDarkMode ? "app-dark" : "app-light")">
+    <MudLayout>
 
-    <!-- AppBar con botón hamburguesa -->
-    <MudAppBar Color="Color.Dark" Elevation="4" >
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-2">Tiempo / Ubicación</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/ebenito/TiempoUbicacionApp" Target="_blank" />
-    </MudAppBar>
+        <!-- AppBar con botón hamburguesa -->
+        <MudAppBar Color="Color.Dark" Elevation="4" >
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+            <MudText Typo="Typo.h6" Class="ml-2">Tiempo / Ubicación</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/ebenito/TiempoUbicacionApp" Target="_blank" />
+        </MudAppBar>
 
-    <!-- Drawer lateral -->
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Width="260px" ClipMode="DrawerClipMode.Always" Anchor="Anchor.Left" Variant="DrawerVariant.Temporary">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Menú</MudText>
-        </MudDrawerHeader>
-        <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All">🏠 Inicio</MudNavLink>
-            <MudNavLink Href="/history">📜 Historial</MudNavLink>
-            <MudNavLink Href="/configuracion">⚙️ Configuración</MudNavLink>
-            <MudNavLink Href="/about">ℹ️ Acerca de</MudNavLink>
-        </MudNavMenu>
-    </MudDrawer>
+        <!-- Drawer lateral -->
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Width="260px" ClipMode="DrawerClipMode.Always" Anchor="Anchor.Left" Variant="DrawerVariant.Temporary">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Menú</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Href="/" Match="NavLinkMatch.All">🏠 Inicio</MudNavLink>
+                <MudNavLink Href="/history">📜 Historial</MudNavLink>
+                <MudNavLink Href="/configuracion">⚙️ Configuración</MudNavLink>
+                <MudNavLink Href="/about">ℹ️ Acerca de</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
 
-    <!-- Contenido principal -->
+        <!-- Contenido principal -->
    
-        <MudMainContent>
-            <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
-                @Body
-            </MudContainer>
-        </MudMainContent>
+            <MudMainContent>
+                <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
 
-</MudLayout>
+    </MudLayout>
+</div>
 
 @code {
     private MudTheme _theme;

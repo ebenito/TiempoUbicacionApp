@@ -99,3 +99,59 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+
+/* Estilos base para las tarjetas en AndrodHistory */
+/* tarjeta base */
+.android-history-item {
+    border-radius: 12px;
+    padding: 12px;
+    margin: 10px 0;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transition: background-color 200ms ease, color 200ms ease;
+    display: block;
+}
+
+/* Tema claro (por defecto) */
+.app-light .android-history-item {
+    background-color: #ffffff;
+    color: #1f2937;
+}
+
+/* Tema oscuro */
+.app-dark .android-history-item {
+    background-color: #111318; /* negro/azulado*/
+    color: #e6eef7;
+}
+
+/* enlaces dentro de la tarjeta */
+.app-light .android-history-item a {
+    color: #1e88e5;
+    text-decoration: underline;
+}
+
+.app-dark .android-history-item a {
+    color: #82caff;
+    text-decoration: underline;
+}
+
+/* Enlace de coordenadas */
+.coord-link {
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+    .coord-link:hover {
+        opacity: 0.8;
+    }
+
+
+/* Tema claro */
+.app-light .coord-link {
+    color: #1e88e5; /* azul medio */
+}
+
+/* Tema oscuro */
+.app-dark .coord-link {
+    color: #82caff; /* azul claro para contraste */
+}
+
