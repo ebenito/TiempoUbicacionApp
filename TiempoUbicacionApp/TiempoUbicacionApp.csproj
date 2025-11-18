@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0-android;</TargetFrameworks>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net10.0-android;</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
         <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
         <!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
 
@@ -42,6 +42,15 @@
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
         <DefaultLanguage>es-ES</DefaultLanguage>
+        <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
+        <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+        <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+        <PackageCertificateThumbprint>EE20BB17620DBB562CCB2B91777C4CA9525386AF</PackageCertificateThumbprint>
+        <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+        <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+        <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+        <GenerateTestArtifacts>True</GenerateTestArtifacts>
+        <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -349,13 +358,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Maui" Version="12.2.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.110" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.110" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.9" />
-        <PackageReference Include="MudBlazor" Version="8.12.0" />
+        <PackageReference Include="CommunityToolkit.Maui" Version="13.0.0" />
+        <PackageReference Include="CommunityToolkit.Maui.Maps" Version="4.0.0" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+        <PackageReference Include="MudBlazor" Version="8.14.0" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-        <PackageReference Include="System.Windows.Extensions" Version="9.0.9" />
+        <PackageReference Include="System.Windows.Extensions" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>
