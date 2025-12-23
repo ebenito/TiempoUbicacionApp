@@ -63,7 +63,7 @@
                 <MudTd DataLabel="Ubicación">@context.Location</MudTd>
                 <MudTd DataLabel="Lat / Lon">
                     @{
-                        var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(context.Latitude, context.Longitude);
+                        var mapUrl = CoordinatesHelper.GetOSMEmbedUrl(context.Latitude, context.Longitude);
                         var hasCoordinates = !string.IsNullOrEmpty(context.Latitude) && !string.IsNullOrEmpty(context.Longitude);
                     }
                     @if (!string.IsNullOrEmpty(mapUrl))

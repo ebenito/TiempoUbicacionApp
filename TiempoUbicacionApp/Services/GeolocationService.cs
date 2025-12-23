@@ -1,24 +1,115 @@
-﻿using System;
+﻿using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Devices;
+using Microsoft.Maui.Devices.Sensors;
+using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using TiempoUbicacionApp.Services;
-using Microsoft.Maui.Devices.Sensors;
-using Microsoft.Maui.Devices;
-using Microsoft.Maui.ApplicationModel;
+using System.Net.Http.Json;
 
 namespace TiempoUbicacionApp.Services
 {
     public class GeolocationService
     {
+        private readonly HttpClient _httpClient = new HttpClient();
         private readonly IAlertService _alertService;
 
         public GeolocationService(IAlertService alertService)
         {
             _alertService = alertService;
         }
+
+       
+
         public async Task<(string Name, string FormattedLatitude, string FormattedLongitude, double Lat, double Lng)>
-        
         GetCurrentLocationAsync(bool forceNew = false)
+        {
+            #if ANDROID
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+
+            if (status != PermissionStatus.Granted)
+            {
+                if (Permissions.ShouldShowRationale<Permissions.LocationWhenInUse>())
+                {
+                    await _alertService.ShowToastAsync("Se necesita acceso a la ubicación para mostrar el mapa.");
+                }
+
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            }
+
+            if (status != PermissionStatus.Granted)
+            {
+                await _alertService.ShowToastAsync("Permiso de ubicación denegado.");
+                return (string.Empty, string.Empty, string.Empty, 0, 0);
+            }
+#endif
+
+            Location location = null;
+
+            try
+            {
+                if (!forceNew)
+                {
+                    location = await Geolocation.Default.GetLastKnownLocationAsync();
+                }
+
+                if (location == null || forceNew)
+                {
+                    var request = new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(10));
+                    location = await Geolocation.Default.GetLocationAsync(request);
+                }
+
+                if (location == null)
+                {
+                    await _alertService.ShowLongToastAsync("No se pudo obtener la ubicación actual.");
+                    return ("Ubicación no disponible", string.Empty, string.Empty, 0, 0);
+                }
+
+                // CORRECCIÓN: Forzamos CultureInfo.InvariantCulture para evitar la coma decimal
+                string url = string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                    $"https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={location.Latitude}&lon={location.Longitude}");
+
+                if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+                {
+                    // Es genial que uses info@tubkala.com, ayuda a que OSM no bloquee tu app
+                    _httpClient.DefaultRequestHeaders.Add("User-Agent", "TiempoUbicacionApp/1.0 (info@tubkala.com)");
+                }
+
+                var response = await _httpClient.GetFromJsonAsync<NominatimResponse>(url);
+
+                // Opcional: Limpiar el nombre para que no sea excesivamente largo en el MudCard
+                string name = response?.DisplayName ?? "Ubicación desconocida";
+                if (response?.Address != null)
+                {
+                    // Ejemplo: "Madrid, Comunidad de Madrid"
+                    response.Address.TryGetValue("city", out var city);
+                    response.Address.TryGetValue("state", out var state);
+                    if (!string.IsNullOrEmpty(city)) name = $"{city}, {state}";
+                }
+
+                return (
+                    Name: name,
+                    FormattedLatitude: ConvertToDMS(location.Latitude, true),
+                    FormattedLongitude: ConvertToDMS(location.Longitude, false),
+                    Lat: location.Latitude,
+                    Lng: location.Longitude
+                );
+            }
+            catch (Exception ex)
+            {
+                // Importante: Si 'location' es null aquí, el return fallaría. 
+                // Usamos valores por defecto si no llegamos a obtener la ubicación.
+                double fallbackLat = location?.Latitude ?? 0;
+                double fallbackLng = location?.Longitude ?? 0;
+
+                await _alertService.ShowLongToastAsync($"Error: {ex.Message}");
+                return ("Error al obtener datos", "...", "...", fallbackLat, fallbackLng);
+            }
+        }
+
+
+        public async Task<(string Name, string FormattedLatitude, string FormattedLongitude, double Lat, double Lng)> GetCurrentLocationMicrosoftMapsAsync(bool forceNew = false)
         {
         #if ANDROID
             var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
@@ -181,4 +272,15 @@ namespace TiempoUbicacionApp.Services
         //}
     }
 
+}
+
+
+
+public class NominatimResponse
+{
+    [JsonPropertyName("display_name")]
+    public string DisplayName { get; set; }
+
+    [JsonPropertyName("address")]
+    public Dictionary<string, string> Address { get; set; }
 }

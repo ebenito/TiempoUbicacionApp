@@ -117,12 +117,36 @@ namespace TiempoUbicacionApp.Helpers
         {
             if (TryParseCoordinate(latStr, out var lat) && TryParseCoordinate(lonStr, out var lon))
             {
-                // usar InvariantCulture para usar punto decimal
-                var latS = lat.ToString("G6", CultureInfo.InvariantCulture);
-                var lonS = lon.ToString("G6", CultureInfo.InvariantCulture);
-                return $"https://www.google.com/maps?q={latS},{lonS}&z={zoom}";
+                // Forzamos el punto decimal para la URL
+                var latS = lat.ToString("G", CultureInfo.InvariantCulture);
+                var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+
+                // Formato oficial para Embed (funciona en iFrames)
+                return $"https://maps.google.com/maps?q={latS},{lonS}&t=&z={zoom}&ie=UTF8&iwloc=&output=embed";
             }
             return null;
         }
+
+        public static string? GetOSMEmbedUrl(string latStr, string lonStr, int zoom = 15)
+        {
+            if (TryParseCoordinate(latStr, out var lat) && TryParseCoordinate(lonStr, out var lon))
+            {
+                // Forzamos el punto decimal
+                var latS = lat.ToString("G", CultureInfo.InvariantCulture);
+                var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+
+                // OSM usa un "bounding box" (sur, oeste, norte, este) para definir la ventana del mapa
+                // El offset de 0.005 es aproximadamente el zoom 15
+                double offset = 0.005;
+                string bbox = $"{(lon - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                              $"{(lat - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                              $"{(lon + offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                              $"{(lat + offset).ToString(CultureInfo.InvariantCulture)}";
+
+                return $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latS}%2C{lonS}";
+            }
+            return null;
+        }
+
     }
 }

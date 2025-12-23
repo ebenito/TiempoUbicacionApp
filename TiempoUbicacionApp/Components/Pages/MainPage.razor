@@ -118,28 +118,44 @@
         {   
             var location = await GeolocationService.GetCurrentLocationAsync();
 
-            if (location.Name != null)
+            // Usamos InvariantCulture para asegurar que siempre haya puntos decimales
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
+
+            if (location.Name != null && location.Lat != 0)
             {
                 locationName = location.Name;
                 formattedLatitude = location.FormattedLatitude;
                 formattedLongitude = location.FormattedLongitude;
                 zona = TimeZoneService.GetStandardGMTZone();
                 isDst = TimeZoneService.IsDaylightSavingNow();
-                lat = location.Lat.ToString().Replace(",", ".");
-                lon = location.Lng.ToString().Replace(",", ".");
-                if (location.Lat != 0 && location.Lng != 0)
-                {
-                    mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
-                }
+            
+                lat = location.Lat.ToString(culture);
+                lon = location.Lng.ToString(culture);
+
+                // Cálculo del Bounding Box para OSM (Zoom aprox 15)
+                double offset = 0.005;
+                string bbox = $"{(location.Lng - offset).ToString(culture)}%2C" +
+                                $"{(location.Lat - offset).ToString(culture)}%2C" +
+                                $"{(location.Lng + offset).ToString(culture)}%2C" +
+                                $"{(location.Lat + offset).ToString(culture)}";
+
+                mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={lat}%2C{lon}";
             }
             else            
             {
+                // Valores por defecto (Casto Celtíbero)
                 locationName = "Casto Celtíbero, Olmeda de Cobeta";
-                formattedLatitude = "40.51.33 N";
-                formattedLongitude = "02.12.32 O";
+                formattedLatitude = "40° 51' 33\" N";
+                formattedLongitude = "02° 12' 32\" O";
                 zona = TimeZoneService.GetStandardGMTZone();
                 isDst = TimeZoneService.IsDaylightSavingNow();
-                mapUrl = $"https://maps.google.com/maps?q=40.859177,-2.208990&z=15&output=embed";
+
+                // Coordenadas fijas para el default
+                string defLat = "40.8591";
+                string defLon = "-2.2088";
+                string defBbox = "-2.2138%2C40.8541%2C-2.2038%2C40.8641";
+
+                mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={defBbox}&layer=mapnik&marker={defLat}%2C{defLon}";
             }
         }
         catch (Exception ex)
@@ -152,6 +168,47 @@
             isLoading = false;
         }
     }
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     try
+    //     {   
+    //         var location = await GeolocationService.GetCurrentLocationAsync();
+
+    //         if (location.Name != null)
+    //         {
+    //             locationName = location.Name;
+    //             formattedLatitude = location.FormattedLatitude;
+    //             formattedLongitude = location.FormattedLongitude;
+    //             zona = TimeZoneService.GetStandardGMTZone();
+    //             isDst = TimeZoneService.IsDaylightSavingNow();
+    //             lat = location.Lat.ToString().Replace(",", ".");
+    //             lon = location.Lng.ToString().Replace(",", ".");
+    //             if (location.Lat != 0 && location.Lng != 0)
+    //             {
+    //                 mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
+    //             }
+    //         }
+    //         else            
+    //         {
+    //             locationName = "Casto Celtíbero, Olmeda de Cobeta";
+    //             formattedLatitude = "40.51.33 N";
+    //             formattedLongitude = "02.12.32 O";
+    //             zona = TimeZoneService.GetStandardGMTZone();
+    //             isDst = TimeZoneService.IsDaylightSavingNow();
+    //             mapUrl = $"https://maps.google.com/maps?q=40.859177,-2.208990&z=15&output=embed";
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         errorMessage = "Error: " + ex.Message;
+    //         await AlertService.ShowLongToastAsync(errorMessage);
+    //     }
+    //     finally
+    //     {
+    //         isLoading = false;
+    //     }
+    // }
 
     private async Task RefreshLocation()
     {
@@ -191,40 +248,62 @@
 
     async Task ShareData()
     {
-        string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+      string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
 
         try
         {
-            bool canShare = await JS.InvokeAsync<bool>("canShare");
-
-            if (canShare)
+            // Esto abrirá el selector nativo (WhatsApp, Telegram, etc.) directamente
+            await Share.Default.RequestAsync(new ShareTextRequest
             {
-                // Usar el cuadro de compartir nativo si está disponible
-                await JS.InvokeVoidAsync("invokeShare", new
-                {
-                    title = "Mis datos de ubicación y tiempo",
-                    text = text
-                });
-            }
-            else
-            {
-                // Copia al portapapeles usando MAUI
-                await Clipboard.SetTextAsync(text);
-                await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
-            }
-        }
-        catch (JSException jsEx)
-        {
-            Console.WriteLine($"Error al compartir: {jsEx.Message}");
-            await Clipboard.SetTextAsync(text);
-            await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
+                Title = "Mis datos de ubicación y tiempo",
+                Text = text,
+                Subject = "Datos de ubicación" // Útil para apps de Email como Outlook
+            });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error inesperado: {ex.Message}");
-            await AlertService.ShowToastAsync("Ocurrió un error al intentar compartir.");
+            // Si falla el compartir nativo (ej. el usuario cancela), copiamos al portapapeles
+            await Clipboard.SetTextAsync(text);
+            await AlertService.ShowToastAsync("Copiado al portapapeles.");
         }
     }
+
+    // async Task ShareData()
+    // {
+    //     string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+
+    //     try
+    //     {
+    //         bool canShare = await JS.InvokeAsync<bool>("canShare");
+
+    //         if (canShare)
+    //         {
+    //             // Usar el cuadro de compartir nativo si está disponible
+    //             await JS.InvokeVoidAsync("invokeShare", new
+    //             {
+    //                 title = "Mis datos de ubicación y tiempo",
+    //                 text = text
+    //             });
+    //         }
+    //         else
+    //         {
+    //             // Copia al portapapeles usando MAUI
+    //             await Clipboard.SetTextAsync(text);
+    //             await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
+    //         }
+    //     }
+    //     catch (JSException jsEx)
+    //     {
+    //         Console.WriteLine($"Error al compartir: {jsEx.Message}");
+    //         await Clipboard.SetTextAsync(text);
+    //         await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error inesperado: {ex.Message}");
+    //         await AlertService.ShowToastAsync("Ocurrió un error al intentar compartir.");
+    //     }
+    // }
 
 
 }
