@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
+@using TiempoUbicacionApp.Helpers
 @using CommunityToolkit.Maui.Alerts
 @inject IJSRuntime JS
 @inject IAlertService AlertService
@@ -133,13 +134,14 @@
                 lon = location.Lng.ToString(culture);
 
                 // Cálculo del Bounding Box para OSM (Zoom aprox 15)
-                double offset = 0.005;
-                string bbox = $"{(location.Lng - offset).ToString(culture)}%2C" +
-                                $"{(location.Lat - offset).ToString(culture)}%2C" +
-                                $"{(location.Lng + offset).ToString(culture)}%2C" +
-                                $"{(location.Lat + offset).ToString(culture)}";
+                // double offset = 0.005;
+                // string bbox = $"{(location.Lng - offset).ToString(culture)}%2C" +
+                //                 $"{(location.Lat - offset).ToString(culture)}%2C" +
+                //                 $"{(location.Lng + offset).ToString(culture)}%2C" +
+                //                 $"{(location.Lat + offset).ToString(culture)}";
 
-                mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={lat}%2C{lon}";
+                // mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={lat}%2C{lon}";
+                mapUrl = GetMapUrlAsync(lat, lon, 15, isEmbedded: true).Result;
             }
             else            
             {
@@ -155,7 +157,8 @@
                 string defLon = "-2.2088";
                 string defBbox = "-2.2138%2C40.8541%2C-2.2038%2C40.8641";
 
-                mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={defBbox}&layer=mapnik&marker={defLat}%2C{defLon}";
+                mapUrl = GetMapUrlAsync(defLat, defLon, 15, isEmbedded: true).Result;
+                // mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={defBbox}&layer=mapnik&marker={defLat}%2C{defLon}";
             }
         }
         catch (Exception ex)
@@ -167,6 +170,11 @@
         {
             isLoading = false;
         }
+    }
+        
+    private async Task<string> GetMapUrlAsync(string latitude, string longitude, int zoom, bool isEmbedded)
+    {
+        return await CoordinatesHelper.GetMapUrlAsync(latitude, longitude, zoom, isEmbedded);
     }
 
     // protected override async Task OnInitializedAsync()

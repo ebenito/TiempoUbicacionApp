@@ -28,6 +28,16 @@
         <MudSelectItem Value="3600">60 minutos</MudSelectItem>
     </MudSelect>
 
+    <MudSelect T="MapProvider"
+               Label="Proveedor de mapas"
+               @bind-Value="_mapProvider"
+               Variant="Variant.Filled"
+               Class="mb-4">
+        <MudSelectItem Value="MapProvider.Google">Google Maps</MudSelectItem>
+        <MudSelectItem Value="MapProvider.OpenStreetMap">OpenStreetMap</MudSelectItem>
+    </MudSelect>
+
+
     <MudButton OnClick="GuardarConfiguracion"
                Variant="Variant.Filled"
                Color="Color.Primary">
@@ -38,6 +48,7 @@
 @code {
     private bool _isDarkMode;
     private int _refreshInterval;
+    private MapProvider _mapProvider;
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,10 +56,11 @@
         {
             _isDarkMode = await SettingsService.GetIsDarkModeAsync();
             _refreshInterval = await SettingsService.GetRefreshIntervalAsync();
+            _mapProvider = await SettingsService.GetMapProviderAsync();
         }
         catch (Exception ex)
         {
-            await AlertService.ShowToastAsync("Error al cargar configuración: " + ex.Message);
+            await AlertService.ShowToastAsync("Error al cargar la configuración: " + ex.Message);
         }
     }
 
@@ -57,11 +69,14 @@
         try
         {
             await SettingsService.SetRefreshIntervalAsync(_refreshInterval);
+            await SettingsService.SetMapProviderAsync(_mapProvider);
             ThemeService.SetDarkMode(_isDarkMode);
+
+            await AlertService.ShowToastAsync("Configuración guardada correctamente.");
         }
         catch (Exception ex)
         {
-            await AlertService.ShowToastAsync("Error al guardar configuración: " + ex.Message);
+            await AlertService.ShowToastAsync("Error al guardar la configuración: " + ex.Message);
         }
     }
 }

@@ -5,8 +5,16 @@ namespace TiempoUbicacionApp.Services
 {
     public class MauiSettingsService : ISettingsService
     {
+        public static MauiSettingsService Current { get; private set; } = null!;
+
+        public MauiSettingsService()
+        {
+            Current = this;
+        }
+
         private const string DarkModeKey = "temaOscuro";
         private const string RefreshIntervalKey = "intervaloRefresco";
+        private const string MapProviderKey = "MapProvider";
 
         // Devuelve si el tema oscuro está activado. Por defecto: falso (tema claro)
         public Task<bool> GetIsDarkModeAsync()
@@ -34,12 +42,27 @@ namespace TiempoUbicacionApp.Services
             return Task.CompletedTask;
         }
 
+
+        public Task<MapProvider> GetMapProviderAsync()
+        {
+            var value = Preferences.Get(MapProviderKey, (int)MapProvider.Google);
+            return Task.FromResult((MapProvider)value);
+        }
+
+        public Task SetMapProviderAsync(MapProvider provider)
+        {
+            Preferences.Set(MapProviderKey, (int)provider);
+            return Task.CompletedTask;
+        }
+
+
 #if DEBUG
         // Método auxiliar para borrar todas las preferencias (solo en modo depuración)
         public static void ResetPreferences()
         {
             Preferences.Clear();
         }
+
 #endif
     }
 }
