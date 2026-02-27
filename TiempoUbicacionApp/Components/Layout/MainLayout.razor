@@ -10,10 +10,10 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
+<MudLayout class="app-layout">
 
     <!-- AppBar con botón hamburguesa -->
-    <MudAppBar Color="Color.Dark" Elevation="4" >
+    <MudAppBar Color="Color.Dark" Elevation="4">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6" Class="ml-2">Tiempo / Ubicación</MudText>
         <MudSpacer />
@@ -34,8 +34,8 @@
     </MudDrawer>
 
     <!-- Contenido principal -->
-   
-        <MudMainContent>
+
+        <MudMainContent class="app-main-content">
             <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
                 @Body
             </MudContainer>
