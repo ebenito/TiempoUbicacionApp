@@ -4,6 +4,38 @@
 }
 
 /* ============================================================================
+   MATERIAL DESIGN 3 ANIMATIONS - Transiciones fluidas y modernas
+   ============================================================================ */
+
+.nav-link-animation {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+}
+
+.nav-link-animation:hover {
+    transform: translateX(4px);
+}
+
+.transition-all {
+    transition: all 0.3s ease !important;
+}
+
+:deep(.mud-card) {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================================
    ANDROID SAFE AREA HANDLING - Asegura que la UI sea visible en Android
    ============================================================================ */
 

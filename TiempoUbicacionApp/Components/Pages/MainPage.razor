@@ -13,58 +13,87 @@
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
 
-    <MudCard Class="mb-4">
+    <!-- Card de Fecha y Hora -->
+    <MudCard Class="mb-4" Elevation="2">
+        <MudCardHeader>
+            <MudText Typo="Typo.h5" Color="Color.Primary">📅 Datos de fecha y hora</MudText>
+        </MudCardHeader>
+        <MudDivider Class="my-2" />
         <MudCardContent>
-            <MudText Typo="Typo.h6" Color="Color.Primary">Datos de fecha y hora</MudText>
-            <MudText>📅 Fecha: @fechaActual</MudText>
-            <MudText>🕒 Hora Local: @horaLocal</MudText>
-            <MudText>🌍 Hora UTC: @horaUtc (Desfase: @offsetFormatted)</MudText>
-            <MudText>⏱ Horario: @tipoHorario</MudText>
+            <MudStack Spacing="2">
+                <MudText>📅 Fecha: <strong>@fechaActual</strong></MudText>
+                <MudText>🕒 Hora Local: <strong>@horaLocal</strong></MudText>
+                <MudText>🌍 Hora UTC: <strong>@horaUtc</strong> (Desfase: <strong>@offsetFormatted</strong>)</MudText>
+                <MudText>⏱ Horario: <strong>@tipoHorario</strong></MudText>
+            </MudStack>
         </MudCardContent>
     </MudCard>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Elevation="1" Dense="true">
+        <MudAlert Severity="Severity.Error" Elevation="2" Dense="false" Class="mb-4">
             ⚠️ @errorMessage
         </MudAlert>
     }
     else if (isLoading)
     {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        <MudPaper Class="d-flex justify-center align-center py-8" Elevation="0">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        </MudPaper>
     }
     else
     {
-        <MudCard Class="mb-4">
+        <!-- Card de Ubicación Actual -->
+        <MudCard Class="mb-4" Elevation="2">
+            <MudCardHeader>
+                <MudText Typo="Typo.h5" Color="Color.Primary">📍 Ubicación actual</MudText>
+            </MudCardHeader>
+            <MudDivider Class="my-2" />
             <MudCardContent>
-                <MudText Typo="Typo.h6" Color="Color.Primary">📍 Ubicación actual</MudText>
-                <MudText>@locationName</MudText>
-                <MudText>Latitud: @formattedLatitude</MudText>
-                <MudText>Longitud: @formattedLongitude</MudText>
-                <MudText>Zona GMT: @zona | @(isDst ? "Horario de verano (DST)" : "Horario estándar")</MudText>
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.body1"><strong>📌 @locationName</strong></MudText>
+                    <MudText>Latitud: <strong>@formattedLatitude</strong></MudText>
+                    <MudText>Longitud: <strong>@formattedLongitude</strong></MudText>
+                    <MudText>Zona GMT: <strong>@zona</strong> | <strong>@(isDst ? "🌞 Horario de verano (DST)" : "❄️ Horario estándar")</strong></MudText>
+                </MudStack>
 
                 @if (!string.IsNullOrWhiteSpace(mapUrl))
                 {
-                    <MudPaper Class="mt-3" Style="overflow:hidden; border-radius:12px;">
-                        <iframe width="100%" height="250" frameborder="0" src="@mapUrl" allowfullscreen></iframe>
+                    <MudPaper Class="mt-4" Style="overflow: hidden; border-radius: 12px;" Elevation="1">
+                        <iframe width="100%" height="250" frameborder="0" src="@mapUrl" allowfullscreen style="border: none;"></iframe>
                     </MudPaper>
                 }
 
-                <div class="mt-3">
-                    <button class="btn btn-primary" @onclick="RefreshLocation">🔄 Actualizar ubicación</button>
-                </div>
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              FullWidth 
+                              OnClick="RefreshLocation"
+                              StartIcon="@Icons.Material.Filled.Refresh">
+                        Actualizar ubicación
+                    </MudButton>
+                </MudStack>
             </MudCardContent>
         </MudCard>
     }
 
-    <MudGrid Class="mt-4">
-        <MudItem xs="12" sm="6">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth OnClick="SaveData">Guardar</MudButton>
-        </MudItem>
-        <MudItem xs="12" sm="6">
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" FullWidth OnClick="ShareData">Compartir</MudButton>
-        </MudItem>
-    </MudGrid>
+    <!-- Botones de acción principales -->
+    <MudStack Row="true" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  FullWidth 
+                  OnClick="SaveData"
+                  StartIcon="@Icons.Material.Filled.Save">
+            💾 Guardar
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" 
+                  Color="Color.Secondary" 
+                  FullWidth 
+                  OnClick="ShareData"
+                  StartIcon="@Icons.Material.Filled.Share">
+            📤 Compartir
+        </MudButton>
+    </MudStack>
 
 </MudContainer>
 

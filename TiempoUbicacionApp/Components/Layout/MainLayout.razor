@@ -5,41 +5,42 @@
 @inject IAlertService AlertService
 
 
-<MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" />
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" DefaultScrollbar="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout class="app-layout">
 
-    <!-- AppBar con botón hamburguesa -->
-    <MudAppBar Color="Color.Dark" Elevation="4" Style="position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 1300; padding-top: max(0px, env(safe-area-inset-top));" >
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+    <!-- AppBar con botón hamburguesa y Material Design 3 -->
+    <MudAppBar Color="Color.Dark" Elevation="4" Style="position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 1300; padding-top: max(0px, env(safe-area-inset-top)); transition: all 0.3s ease;" >
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" Class="transition-all" />
         <MudText Typo="Typo.h6" Class="ml-2">Tiempo / Ubicación</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/ebenito/TiempoUbicacionApp" Target="_blank" />
+        <MudTooltip Text="GitHub">
+            <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/ebenito/TiempoUbicacionApp" Target="_blank" />
+        </MudTooltip>
     </MudAppBar>
 
-    <!-- Drawer lateral -->
+    <!-- Drawer lateral con animación mejorada -->
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Width="260px" ClipMode="DrawerClipMode.Always" Anchor="Anchor.Left" Variant="DrawerVariant.Temporary">
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">Menú</MudText>
         </MudDrawerHeader>
         <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All">🏠 Inicio</MudNavLink>
-            <MudNavLink Href="/history">📜 Historial</MudNavLink>
-            <MudNavLink Href="/configuracion">⚙️ Configuración</MudNavLink>
-            <MudNavLink Href="/about">ℹ️ Acerca de</MudNavLink>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Class="nav-link-animation">🏠 Inicio</MudNavLink>
+            <MudNavLink Href="/history" Class="nav-link-animation">📜 Historial</MudNavLink>
+            <MudNavLink Href="/configuracion" Class="nav-link-animation">⚙️ Configuración</MudNavLink>
+            <MudNavLink Href="/about" Class="nav-link-animation">ℹ️ Acerca de</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
-    <!-- Contenido principal -->
-
-        <MudMainContent Style="margin-top: 64px; padding-bottom: max(0px, env(safe-area-inset-bottom));">
-            <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
-                @Body
-            </MudContainer>
-        </MudMainContent>
+    <!-- Contenido principal con Safe Area -->
+    <MudMainContent Style="margin-top: 64px; padding-bottom: max(0px, env(safe-area-inset-bottom));">
+        <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
 
 </MudLayout>
 
@@ -53,20 +54,15 @@
         _drawerOpen = !_drawerOpen;
     }
 
-
     protected override async Task OnInitializedAsync()
     {
-        await ThemeService.InitializeAsync(); // <- Se asegura de leer la preferencia
+        await ThemeService.InitializeAsync();
         _isDarkMode = ThemeService.IsDarkMode;
         _theme = ThemeService.GetTheme();
-        ThemeService.OnChange += ThemeChanged;
         
-        if (AlertService is MauiAlertService mas)
-        {
-            mas.Initialize(Snackbar); // Aquí ya MudBlazor está listo
-        }
+        // Suscribirse al evento de cambio de tema
+        ThemeService.OnChange += ThemeChanged;
     }
-
 
     private void ThemeChanged(bool isDark)
     {
@@ -75,6 +71,8 @@
         InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose() => ThemeService.OnChange -= ThemeChanged;
-
+    public void Dispose()
+    {
+        ThemeService.OnChange -= ThemeChanged;
+    }
 }
