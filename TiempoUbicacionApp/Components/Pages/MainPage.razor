@@ -8,6 +8,8 @@
 @inject ITimeZoneService TimeZoneService
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
+@inject ISettingsService SettingsService
+@implements IDisposable
 
 
 
@@ -114,17 +116,74 @@
     private bool isDst;
 
 
-    private System.Threading.Timer timer;  
+    private System.Threading.Timer clockTimer;
+    private System.Threading.Timer? autoRefreshTimer;
+    private int currentRefreshInterval = -1;
+    private int isAutoRefreshRunning;
 
     protected override void OnInitialized()  
     {  
-        timer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);  
+        clockTimer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);  
     }  
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ConfigureAutoRefreshTimerAsync();
+    }
 
     public void Dispose()
     {
-        timer?.Change(Timeout.Infinite, Timeout.Infinite);
-        timer?.Dispose();
+        clockTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        clockTimer?.Dispose();
+        StopAutoRefreshTimer();
+    }
+
+    private async Task ConfigureAutoRefreshTimerAsync()
+    {
+        var refreshInterval = await SettingsService.GetRefreshIntervalAsync();
+
+        if (refreshInterval == currentRefreshInterval)
+        {
+            return;
+        }
+
+        StopAutoRefreshTimer();
+        currentRefreshInterval = refreshInterval;
+
+        if (refreshInterval <= 0)
+        {
+            return;
+        }
+
+        autoRefreshTimer = new System.Threading.Timer(
+            async _ => await AutoRefreshLocationCallbackAsync(),
+            null,
+            TimeSpan.FromSeconds(refreshInterval),
+            TimeSpan.FromSeconds(refreshInterval));
+    }
+
+    private void StopAutoRefreshTimer()
+    {
+        autoRefreshTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        autoRefreshTimer?.Dispose();
+        autoRefreshTimer = null;
+    }
+
+    private async Task AutoRefreshLocationCallbackAsync()
+    {
+        if (Interlocked.Exchange(ref isAutoRefreshRunning, 1) == 1)
+        {
+            return;
+        }
+
+        try
+        {
+            await InvokeAsync(async () => await RefreshLocationCoreAsync(showMessages: false));
+        }
+        finally
+        {
+            Interlocked.Exchange(ref isAutoRefreshRunning, 0);
+        }
     }
 
     private async Task ActualizarDatosAsync()
@@ -158,7 +217,7 @@
                 formattedLongitude = location.FormattedLongitude;
                 zona = TimeZoneService.GetStandardGMTZone();
                 isDst = TimeZoneService.IsDaylightSavingNow();
-            
+
                 lat = location.Lat.ToString(culture);
                 lon = location.Lng.ToString(culture);
 
@@ -170,7 +229,7 @@
                 //                 $"{(location.Lat + offset).ToString(culture)}";
 
                 // mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={lat}%2C{lon}";
-                mapUrl = GetMapUrlAsync(lat, lon, 15, isEmbedded: true).Result;
+                mapUrl = await GetMapUrlAsync(lat, lon, 15, isEmbedded: true);
             }
             else            
             {
@@ -184,10 +243,9 @@
                 // Coordenadas fijas para el default
                 string defLat = "40.8591";
                 string defLon = "-2.2088";
-                string defBbox = "-2.2138%2C40.8541%2C-2.2038%2C40.8641";
-
-                mapUrl = GetMapUrlAsync(defLat, defLon, 15, isEmbedded: true).Result;
+                mapUrl = await GetMapUrlAsync(defLat, defLon, 15, isEmbedded: true);
                 // mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={defBbox}&layer=mapnik&marker={defLat}%2C{defLon}";
+                // mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
             }
         }
         catch (Exception ex)
@@ -200,68 +258,72 @@
             isLoading = false;
         }
     }
-        
+
     private async Task<string> GetMapUrlAsync(string latitude, string longitude, int zoom, bool isEmbedded)
     {
         return await CoordinatesHelper.GetMapUrlAsync(latitude, longitude, zoom, isEmbedded);
     }
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     try
-    //     {   
-    //         var location = await GeolocationService.GetCurrentLocationAsync();
-
-    //         if (location.Name != null)
-    //         {
-    //             locationName = location.Name;
-    //             formattedLatitude = location.FormattedLatitude;
-    //             formattedLongitude = location.FormattedLongitude;
-    //             zona = TimeZoneService.GetStandardGMTZone();
-    //             isDst = TimeZoneService.IsDaylightSavingNow();
-    //             lat = location.Lat.ToString().Replace(",", ".");
-    //             lon = location.Lng.ToString().Replace(",", ".");
-    //             if (location.Lat != 0 && location.Lng != 0)
-    //             {
-    //                 mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
-    //             }
-    //         }
-    //         else            
-    //         {
-    //             locationName = "Casto Celtíbero, Olmeda de Cobeta";
-    //             formattedLatitude = "40.51.33 N";
-    //             formattedLongitude = "02.12.32 O";
-    //             zona = TimeZoneService.GetStandardGMTZone();
-    //             isDst = TimeZoneService.IsDaylightSavingNow();
-    //             mapUrl = $"https://maps.google.com/maps?q=40.859177,-2.208990&z=15&output=embed";
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         errorMessage = "Error: " + ex.Message;
-    //         await AlertService.ShowLongToastAsync(errorMessage);
-    //     }
-    //     finally
-    //     {
-    //         isLoading = false;
-    //     }
-    // }
-
     private async Task RefreshLocation()
     {
-        var location = await GeolocationService.GetCurrentLocationAsync(forceNew: true);
+        await RefreshLocationCoreAsync(showMessages: true);
+    }
 
-        if (location.Lat != 0 && location.Lng != 0)
+    private async Task<bool> RefreshLocationCoreAsync(bool showMessages)
+    {
+        try
         {
-            lat = location.Lat.ToString().Replace(",", ".");
-            lon = location.Lng.ToString().Replace(",", ".");
+            var location = await GeolocationService.GetCurrentLocationAsync(forceNew: true);
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
 
-            mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
-            await AlertService.ShowToastAsync("Ubicación actualizada.");
+            if (location.Name == "Error al obtener datos")
+            {
+                StopAutoRefreshTimer();
+                currentRefreshInterval = 0;                
+            }
+
+            if (location.Lat != 0 && location.Lng != 0)
+            {
+                locationName = location.Name ?? locationName;
+                formattedLatitude = location.FormattedLatitude;
+                formattedLongitude = location.FormattedLongitude;
+                zona = TimeZoneService.GetStandardGMTZone();
+                isDst = TimeZoneService.IsDaylightSavingNow();
+
+                lat = location.Lat.ToString(culture);
+                lon = location.Lng.ToString(culture);
+                mapUrl = await GetMapUrlAsync(lat, lon, 15, isEmbedded: true);
+
+                await InvokeAsync(StateHasChanged);
+
+                if (showMessages)
+                {
+                    await AlertService.ShowToastAsync("Ubicación actualizada.");
+                }
+
+                return true;
+            }
+
+            if (showMessages)
+            {
+                await AlertService.ShowLongToastAsync("No se pudo actualizar la ubicación.");
+            }
+
+            return false;
         }
-        else
+        catch (Exception ex)
         {
-            await AlertService.ShowLongToastAsync("No se pudo actualizar la ubicación.");
+            errorMessage = "Error al actualizar ubicación: " + ex.Message;
+            StopAutoRefreshTimer();
+            currentRefreshInterval = 0;
+
+            await AlertService.ShowLongToastAsync(
+                showMessages
+                    ? errorMessage
+                    : "Se desactivó la actualización automática por un error al obtener la ubicación.");
+
+            await InvokeAsync(StateHasChanged);
+            return false;
         }
     }
    
