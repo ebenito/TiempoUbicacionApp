@@ -7,6 +7,7 @@
 @using System.IO;
 @using System.Threading.Tasks;
 
+@inject ThemeService ThemeService
 @inject LocationDatabaseService DatabaseService
 @inject IAlertService AlertService
 
@@ -50,9 +51,8 @@ else
 {
     <ul style="list-style:none;padding:0;margin:0">
         @foreach (var e in @Entries)
-        {           
-            <li style="background:#fff;border-radius:12px;padding:12px;margin:10px 0;
-                               box-shadow:0 4px 10px rgba(0,0,0,.08)">
+        {
+            <li style="@GetCardInlineStyle()">
                 <div style="font-weight:600;margin-bottom:6px">@e.fechaActual</div>
                 <div>🕒 Local: @e.horaLocal · 🌍 UTC: @e.horaUtc · (@e.desfase)</div>
                 <div>⏱ @e.tipoHorario</div>
@@ -103,6 +103,14 @@ else
             await InvokeAsync(StateHasChanged);
         }
     }
+
+    private string GetCardInlineStyle()
+   {
+       if (ThemeService.IsDarkMode)
+           return "background:#111318;color:#e6eef7;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 6px 18px rgba(0,0,0,0.3);";
+       else
+           return "background:#fff;color:#222;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 6px 18px rgba(0,0,0,0.08);";
+   }
 
     private async Task SendDbByEmail()
     {

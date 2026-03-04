@@ -21,7 +21,7 @@ namespace TiempoUbicacionApp
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new MainPage()) { Title = "TiempoUbicacionApp" };
+            return new Window(new MainPage()) { Title = "Tiempo & Ubicación" };
         }
 
         private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs e)
