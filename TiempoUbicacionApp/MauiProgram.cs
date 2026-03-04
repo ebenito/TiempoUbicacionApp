@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Maps;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using TiempoUbicacionApp.Services;
@@ -20,6 +21,7 @@ namespace TiempoUbicacionApp
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
+                .UseMauiCommunityToolkitMaps("YOUR_MAPS_KEY")
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

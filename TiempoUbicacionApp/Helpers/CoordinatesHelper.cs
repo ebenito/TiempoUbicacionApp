@@ -1,12 +1,23 @@
-﻿using System;
-using System.Globalization;
-using System.Linq;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
+using TiempoUbicacionApp.Services;
 
 namespace TiempoUbicacionApp.Helpers
 {
     public static class CoordinatesHelper
     {
+        public static async Task<string?> GetMapUrlAsync(string latStr, string lonStr, int zoom = 15, bool isEmbedded = true)
+        {
+            var provider = await MauiSettingsService.Current.GetMapProviderAsync(); 
+
+            return provider switch
+            {
+                MapProvider.Google => GetGoogleMapsUrl(latStr, lonStr, zoom, isEmbedded),
+                MapProvider.OpenStreetMap => GetOSMEmbedUrl(latStr, lonStr, zoom),
+                _ => GetOSMEmbedUrl(latStr, lonStr, zoom)
+            };
+        }
+
         /// <summary>
         /// Intenta parsear una coordenada que puede ser:
         /// - Decimal: "40.859167" o "-2.196667"
@@ -113,16 +124,46 @@ namespace TiempoUbicacionApp.Helpers
         /// Construye URL de Google Maps usando lat/lon en decimal.
         /// Devuelve null si no puede parsear.
         /// </summary>
-        public static string? GetGoogleMapsUrl(string latStr, string lonStr, int zoom = 15)
+        public static string? GetGoogleMapsUrl(string latStr, string lonStr, int zoom = 15, bool isEmbebed = true )
         {
             if (TryParseCoordinate(latStr, out var lat) && TryParseCoordinate(lonStr, out var lon))
             {
-                // usar InvariantCulture para usar punto decimal
-                var latS = lat.ToString("G6", CultureInfo.InvariantCulture);
-                var lonS = lon.ToString("G6", CultureInfo.InvariantCulture);
-                return $"https://www.google.com/maps?q={latS},{lonS}&z={zoom}";
+                // Forzamos el punto decimal para la URL
+                var latS = lat.ToString("G", CultureInfo.InvariantCulture);
+                var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+
+                if (isEmbebed) // Para mostrar en la App
+                {
+                    return $"https://maps.google.com/maps?q={latS},{lonS}&t=&z={zoom}&ie=UTF8&iwloc=&output=embed";  // Formato oficial para Embed (funciona en iFrames)
+                }
+                else // Para abrir en navegador
+                {
+                    return $"https://www.google.com/maps?q={latS},{lonS}&z={zoom}&ie=UTF8&iwloc=";
+                }                    
             }
             return null;
         }
+
+        public static string? GetOSMEmbedUrl(string latStr, string lonStr, int zoom = 15)
+        {
+            if (TryParseCoordinate(latStr, out var lat) && TryParseCoordinate(lonStr, out var lon))
+            {
+                // Forzamos el punto decimal
+                var latS = lat.ToString("G", CultureInfo.InvariantCulture);
+                var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+
+                // OSM usa un "bounding box" (sur, oeste, norte, este) para definir la ventana del mapa
+                // El offset de 0.005 es aproximadamente el zoom 15
+                double offset = 0.005;
+                string bbox = $"{(lon - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                              $"{(lat - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                              $"{(lon + offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                              $"{(lat + offset).ToString(CultureInfo.InvariantCulture)}";
+
+                return $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latS}%2C{lonS}";
+            }
+            return null;
+        }
+
     }
 }

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0-android;</TargetFrameworks>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net10.0-android;</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.26100.0</TargetFrameworks>
         <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
         <!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
 
@@ -10,7 +10,7 @@
             The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
             When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
             The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
-            either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
+            ther BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
         <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
         <OutputType>Exe</OutputType>
@@ -33,7 +33,7 @@
         <ApplicationVersion>1</ApplicationVersion>
 
         <!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
-        <WindowsPackageType>None</WindowsPackageType>
+        <WindowsPackageType>MSIX</WindowsPackageType>
 
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
@@ -42,6 +42,15 @@
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
         <DefaultLanguage>es-ES</DefaultLanguage>
+        <!--<GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>-->
+        <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+        <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+        <!--<PackageCertificateThumbprint>617F47F66BC0CF2B917DEAE8B9B2652DAD568E64</PackageCertificateThumbprint>-->
+        <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+        <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+        <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+        <GenerateTestArtifacts>True</GenerateTestArtifacts>
+        <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -70,6 +79,69 @@
       <None Remove="Platforms\Windows\Images\SmallTile.png" />
       <None Remove="Platforms\Windows\Images\SplashScreen.png" />
       <None Remove="Platforms\Windows\Images\WideTile.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-16.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-24.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-256.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-32.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-48.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-16.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-24.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-256.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-32.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-48.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.targetsize-16.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.targetsize-24.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.targetsize-256.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.targetsize-32.png" />
+      <None Remove="Resources\RecursosTienda\AppIcon.targetsize-48.png" />
+      <None Remove="Resources\RecursosTienda\BadgeLogo.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\BadgeLogo.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\BadgeLogo.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\BadgeLogo.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\BadgeLogo.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\LargeTile.png" />
+      <None Remove="Resources\RecursosTienda\LargeTile.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\LargeTile.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\LargeTile.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\LargeTile.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\LargeTile.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\MediumTile.png" />
+      <None Remove="Resources\RecursosTienda\MediumTile.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\MediumTile.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\MediumTile.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\MediumTile.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\MediumTile.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\PackageLogo.png" />
+      <None Remove="Resources\RecursosTienda\PackageLogo.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\PackageLogo.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\PackageLogo.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\PackageLogo.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\PackageLogo.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\SmallTile.png" />
+      <None Remove="Resources\RecursosTienda\SmallTile.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\SmallTile.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\SmallTile.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\SmallTile.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\SmallTile.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\SplashScreen.png" />
+      <None Remove="Resources\RecursosTienda\SplashScreen.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\SplashScreen.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\SplashScreen.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\SplashScreen.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\SplashScreen.scale-400.png" />
+      <None Remove="Resources\RecursosTienda\telescopio-espacial.png" />
+      <None Remove="Resources\RecursosTienda\WideTile.png" />
+      <None Remove="Resources\RecursosTienda\WideTile.scale-100.png" />
+      <None Remove="Resources\RecursosTienda\WideTile.scale-125.png" />
+      <None Remove="Resources\RecursosTienda\WideTile.scale-150.png" />
+      <None Remove="Resources\RecursosTienda\WideTile.scale-200.png" />
+      <None Remove="Resources\RecursosTienda\WideTile.scale-400.png" />
     </ItemGroup>
 
     <ItemGroup>
@@ -94,16 +166,206 @@
       <Content Include="Platforms\Windows\Images\WideTile.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-16.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-24.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-256.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-32.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-lightunplated_targetsize-48.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-16.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-24.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-256.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-32.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.altform-unplated_targetsize-48.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.targetsize-16.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.targetsize-24.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.targetsize-256.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.targetsize-32.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\AppIcon.targetsize-48.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\BadgeLogo.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\BadgeLogo.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\BadgeLogo.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\BadgeLogo.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\BadgeLogo.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\LargeTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\LargeTile.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\LargeTile.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\LargeTile.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\LargeTile.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\LargeTile.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\MediumTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\MediumTile.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\MediumTile.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\MediumTile.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\MediumTile.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\MediumTile.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\PackageLogo.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\PackageLogo.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\PackageLogo.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\PackageLogo.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\PackageLogo.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\PackageLogo.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SmallTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SmallTile.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SmallTile.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SmallTile.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SmallTile.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SmallTile.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SplashScreen.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SplashScreen.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SplashScreen.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SplashScreen.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SplashScreen.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\SplashScreen.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\telescopio-espacial.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\WideTile.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\WideTile.scale-100.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\WideTile.scale-125.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\WideTile.scale-150.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\WideTile.scale-200.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Resources\RecursosTienda\WideTile.scale-400.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Maui" Version="12.2.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.110" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.110" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.9" />
-        <PackageReference Include="MudBlazor" Version="8.12.0" />
+        <PackageReference Include="CommunityToolkit.Maui" Version="14.0.1" />
+        <PackageReference Include="CommunityToolkit.Maui.Maps" Version="4.0.0" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.41" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.41" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.3" />
+        <PackageReference Include="MudBlazor" Version="9.1.0" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-        <PackageReference Include="System.Windows.Extensions" Version="9.0.9" />
+        <PackageReference Include="System.Windows.Extensions" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>

@@ -10,10 +10,35 @@
         <MudDivider Class="my-2" />
 
         <MudCardContent>
-            <MudText><strong>Versión:</strong> 1.0.3</MudText>
-            <MudText><strong>Desarrollador:</strong> Esteban Benito</MudText>
-            <MudText><strong>Email:</strong> info@tubkala.com</MudText>
+            <MudStack Spacing="3">
+                <MudText><strong>🔢 Versión:</strong> 1.1.5.2</MudText>
+                <MudText><strong>👨‍💻 Desarrollador:</strong> Esteban Benito</MudText>
+                <MudText><strong>📧 Email:</strong> 
+                    <MudLink Href="mailto:info@tubkala.com" Target="_blank">info@tubkala.com</MudLink>
+                </MudText>
+                
+                <MudDivider Class="my-2" />
+                
+                <MudText Typo="Typo.subtitle2" Class="mt-4">
+                    <strong>Tecnologías utilizadas:</strong>
+                </MudText>
+                <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                    <MudChip T="string" Text=".NET 10" Icon="@Icons.Material.Filled.Code" Color="Color.Primary" />
+                    <MudChip T="string" Text="MAUI Blazor Hybrid" Icon="@Icons.Material.Filled.Devices" Color="Color.Primary" />
+                    <MudChip T="string" Text="MudBlazor 9.1" Icon="@Icons.Material.Filled.Palette" Color="Color.Primary" />
+                    <MudChip T="string" Text="Material Design 3" Icon="@Icons.Material.Filled.Style" Color="Color.Primary" />
+                </MudStack>
+            </MudStack>
         </MudCardContent>
+
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Primary" 
+                      Href="https://github.com/ebenito/TiempoUbicacionApp" 
+                      Target="_blank"
+                      StartIcon="@Icons.Custom.Brands.GitHub">
+                Ver en GitHub
+            </MudButton>
+        </MudCardActions>
     </MudCard>
 
 </MudContainer>

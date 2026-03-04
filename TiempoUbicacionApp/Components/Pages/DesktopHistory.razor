@@ -63,12 +63,14 @@
                 <MudTd DataLabel="Ubicación">@context.Location</MudTd>
                 <MudTd DataLabel="Lat / Lon">
                     @{
-                        var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(context.Latitude, context.Longitude);
+                        // var mapUrl = CoordinatesHelper.GetOSMEmbedUrl(context.Latitude, context.Longitude);
+                        // var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(context.Latitude, context.Longitude);
+                        var mapUrl = GetMapUrlAsync(context.Latitude, context.Longitude, 10, isEmbedded: false);
                         var hasCoordinates = !string.IsNullOrEmpty(context.Latitude) && !string.IsNullOrEmpty(context.Longitude);
                     }
-                    @if (!string.IsNullOrEmpty(mapUrl))
+                    @if (!string.IsNullOrEmpty(mapUrl.Result))
                     {
-                        <MudLink Href="@mapUrl" Target="_blank" Class="coord-link">@context.Latitude, @context.Longitude</MudLink>
+                        <MudLink Href="@mapUrl.Result" Target="_blank" Class="coord-link">@context.Latitude, @context.Longitude</MudLink>
                     }
                     else if (hasCoordinates)
                     {
@@ -111,4 +113,8 @@
         }
     }
 
+    private async Task<string> GetMapUrlAsync(string latitude, string longitude, int zoom, bool isEmbedded)
+    {
+        return await CoordinatesHelper.GetMapUrlAsync(latitude, longitude, zoom, isEmbedded);
+    }
 }
