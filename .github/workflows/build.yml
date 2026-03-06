@@ -2,36 +2,34 @@ name: Build MAUI App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: windows-latest
 
     env:
-      GRAPH__CLIENTID: ${{ secrets.GRAPH__CLIENTID }}
-      GRAPH__CLIENTSECRET: ${{ secrets.GRAPH__CLIENTSECRET }}
-      GRAPH__TENANTID: ${{ secrets.GRAPH__TENANTID }}
+      MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4          # v4 es la versión actual recomendada
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET 10                # CORREGIDO: era 8.0.x
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Install MAUI workload
-        run: dotnet workload install maui
+        run: dotnet workload install maui android
 
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build Android
-        run: dotnet build -f net8.0-android --configuration Release
+      - name: Build Android                # CORREGIDO: era net8.0-android
+        run: dotnet build -f net10.0-android --configuration Release --no-restore
 
-      - name: Build Windows
-        run: dotnet build -f net8.0-windows10.0.19041.0 --configuration Release
+      - name: Build Windows                # CORREGIDO: era net8.0-windows10.0.19041.0
+        run: dotnet build -f net10.0-windows10.0.26100.0 --configuration Release --no-restore
