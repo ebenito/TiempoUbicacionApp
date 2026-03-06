@@ -4,11 +4,23 @@ using TiempoUbicacionApp.Services;
 
 namespace TiempoUbicacionApp.Helpers
 {
+    /// <summary>
+    /// Helper para construir URLs de mapas y parsear coordenadas.
+    /// </summary>
     public static class CoordinatesHelper
     {
-        public static async Task<string?> GetMapUrlAsync(string latStr, string lonStr, int zoom = 15, bool isEmbedded = true)
+        /// <summary>
+        /// Construye la URL del mapa según el proveedor configurado por el usuario.
+        /// </summary>
+        /// <param name="settingsService">Servicio de configuración inyectado desde el componente.</param>
+        public static async Task<string?> GetMapUrlAsync(
+            string latStr,
+            string lonStr,
+            ISettingsService settingsService,
+            int zoom = 15,
+            bool isEmbedded = true)
         {
-            var provider = await MauiSettingsService.Current.GetMapProviderAsync(); 
+            var provider = await settingsService.GetMapProviderAsync();
 
             return provider switch
             {
@@ -19,13 +31,12 @@ namespace TiempoUbicacionApp.Helpers
         }
 
         /// <summary>
-        /// Intenta parsear una coordenada que puede ser:
-        /// - Decimal: "40.859167" o "-2.196667"
-        /// - DMS con símbolos: "41º 03' 34'' N" o "41°03'34\"N"
-        /// - DMS con puntos: "40.51.33 N" (interpreta como 40°51'33")
-        /// - DMS con separadores ":" "40:51:33 N"
-        /// - Palabras en español (Norte/Sur/Este/Oeste)
-        /// Devuelve true y el valor en grados decimales (positivo norte/este, negativo sur/oeste).
+        /// Intenta parsear una coordenada en múltiples formatos:
+        /// - Decimal:          "40.859167" / "-2.196667"
+        /// - DMS con símbolos: "41º 03' 34'' N" / "41°03'34\"N"
+        /// - DMS con puntos:   "40.51.33 N"  (interpreta como 40°51'33")
+        /// - DMS con ":"       "40:51:33 N"
+        /// - Palabras ES:      Norte / Sur / Este / Oeste
         /// </summary>
         public static bool TryParseCoordinate(string input, out double value)
         {
@@ -33,33 +44,29 @@ namespace TiempoUbicacionApp.Helpers
             if (string.IsNullOrWhiteSpace(input))
                 return false;
 
-            // Normalizar
             string s = input.Trim();
 
-            // Reemplazar palabras españolas por abreviaturas anglo (N,S,E,W)
+            // Normalizar palabras españolas a abreviaturas anglosajonas
             s = Regex.Replace(s, @"\b(norte)\b", "N", RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"\b(sur)\b", "S", RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"\b(este)\b", "E", RegexOptions.IgnoreCase);
             s = Regex.Replace(s, @"\b(oeste)\b", "W", RegexOptions.IgnoreCase);
-
-            // También aceptar abreviatura 'O' como Oeste → W
             s = Regex.Replace(s, @"\bO\b", "W", RegexOptions.IgnoreCase);
 
-            // Si el string contiene muchos puntos (ej. "40.51.33") y no es un decimal típico,
-            // probablemente las puntos son separadores DMS -> sustituir por espacio
+            // Si hay múltiples puntos (ej. "40.51.33") son separadores DMS, no decimal
             int dotCount = s.Count(c => c == '.');
             if (dotCount >= 2)
                 s = s.Replace('.', ' ');
 
-            // Reemplazar otros separadores por espacio
+            // Normalizar separadores a espacio
             s = s.Replace('°', ' ')
                  .Replace('º', ' ')
                  .Replace(':', ' ')
                  .Replace("''", " ")
                  .Replace("″", " ")
                  .Replace("′", " ")
-                 .Replace("“", " ")
-                 .Replace("”", " ")
+                 .Replace("\u201c", " ")
+                 .Replace("\u201d", " ")
                  .Replace("\"", " ")
                  .Replace("'", " ");
 
@@ -67,18 +74,19 @@ namespace TiempoUbicacionApp.Helpers
             var dirMatch = Regex.Match(s, @"\b([NSEW])\b", RegexOptions.IgnoreCase);
             char dir = dirMatch.Success ? char.ToUpper(dirMatch.Value[0]) : '\0';
 
-            // Eliminar letras (dejamos solo números y separadores)
+            // Extraer solo números
             string numbersOnly = Regex.Replace(s, @"[A-Za-z]", " ");
-
-            // Extraer números (grados, minutos, segundos o decimal)
             var matches = Regex.Matches(numbersOnly, @"-?\d+(\.\d+)?");
-            var nums = matches.Select(m => double.Parse(m.Value, CultureInfo.InvariantCulture)).ToArray();
+            var nums = matches
+                .Select(m => double.Parse(m.Value, CultureInfo.InvariantCulture))
+                .ToArray();
 
             if (nums.Length == 0)
             {
-                // última oportunidad: quizá la cadena es "-2,196667" con coma decimal
+                // Último intento: coma decimal ("−2,196667")
                 string commaNormalized = input.Replace(',', '.');
-                if (double.TryParse(commaNormalized, NumberStyles.Float, CultureInfo.InvariantCulture, out var decAlt))
+                if (double.TryParse(commaNormalized, NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out var decAlt))
                 {
                     value = decAlt;
                     return true;
@@ -86,84 +94,60 @@ namespace TiempoUbicacionApp.Helpers
                 return false;
             }
 
-            double result;
-            if (nums.Length == 1)
+            double result = nums.Length switch
             {
-                // Es decimal (o tenemos sólo grados)
-                result = nums[0];
-            }
-            else if (nums.Length == 2)
-            {
-                // grados, minutos
-                double deg = nums[0];
-                double min = nums[1];
-                result = deg + (min / 60.0);
-            }
-            else
-            {
-                // grados, minutos, segundos
-                double deg = nums[0];
-                double min = nums[1];
-                double sec = nums[2];
-                // cálculo: deg + min/60 + sec/3600
-                // ejemplo: 40° 51' 33'' => 40 + 51/60 + 33/3600
-                result = deg + (min / 60.0) + (sec / 3600.0);
-            }
+                1 => nums[0],
+                2 => nums[0] + nums[1] / 60.0,
+                _ => nums[0] + nums[1] / 60.0 + nums[2] / 3600.0
+            };
 
-            // Aplicar signo según dirección (S o W => negativo)
-            if (dir == 'S' || dir == 'W')
-            {
-                if (result > 0) result = -result;
-            }
+            // Sur u Oeste → negativo
+            if ((dir == 'S' || dir == 'W') && result > 0)
+                result = -result;
 
             value = result;
             return true;
         }
 
         /// <summary>
-        /// Construye URL de Google Maps usando lat/lon en decimal.
-        /// Devuelve null si no puede parsear.
+        /// Construye URL de Google Maps.
         /// </summary>
-        public static string? GetGoogleMapsUrl(string latStr, string lonStr, int zoom = 15, bool isEmbebed = true )
+        public static string? GetGoogleMapsUrl(
+            string latStr, string lonStr,
+            int zoom = 15, bool isEmbebed = true)
         {
-            if (TryParseCoordinate(latStr, out var lat) && TryParseCoordinate(lonStr, out var lon))
-            {
-                // Forzamos el punto decimal para la URL
-                var latS = lat.ToString("G", CultureInfo.InvariantCulture);
-                var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+            if (!TryParseCoordinate(latStr, out var lat) ||
+                !TryParseCoordinate(lonStr, out var lon))
+                return null;
 
-                if (isEmbebed) // Para mostrar en la App
-                {
-                    return $"https://maps.google.com/maps?q={latS},{lonS}&t=&z={zoom}&ie=UTF8&iwloc=&output=embed";  // Formato oficial para Embed (funciona en iFrames)
-                }
-                else // Para abrir en navegador
-                {
-                    return $"https://www.google.com/maps?q={latS},{lonS}&z={zoom}&ie=UTF8&iwloc=";
-                }                    
-            }
-            return null;
+            var latS = lat.ToString("G", CultureInfo.InvariantCulture);
+            var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+
+            return isEmbebed
+                ? $"https://maps.google.com/maps?q={latS},{lonS}&t=&z={zoom}&ie=UTF8&iwloc=&output=embed"
+                : $"https://www.google.com/maps?q={latS},{lonS}&z={zoom}&ie=UTF8&iwloc=";
         }
 
+        /// <summary>
+        /// Construye URL de OpenStreetMap embed.
+        /// </summary>
         public static string? GetOSMEmbedUrl(string latStr, string lonStr, int zoom = 15)
         {
-            if (TryParseCoordinate(latStr, out var lat) && TryParseCoordinate(lonStr, out var lon))
-            {
-                // Forzamos el punto decimal
-                var latS = lat.ToString("G", CultureInfo.InvariantCulture);
-                var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
+            if (!TryParseCoordinate(latStr, out var lat) ||
+                !TryParseCoordinate(lonStr, out var lon))
+                return null;
 
-                // OSM usa un "bounding box" (sur, oeste, norte, este) para definir la ventana del mapa
-                // El offset de 0.005 es aproximadamente el zoom 15
-                double offset = 0.005;
-                string bbox = $"{(lon - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
-                              $"{(lat - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
-                              $"{(lon + offset).ToString(CultureInfo.InvariantCulture)}%2C" +
-                              $"{(lat + offset).ToString(CultureInfo.InvariantCulture)}";
+            var latS = lat.ToString("G", CultureInfo.InvariantCulture);
+            var lonS = lon.ToString("G", CultureInfo.InvariantCulture);
 
-                return $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latS}%2C{lonS}";
-            }
-            return null;
+            double offset = 0.005;
+            string bbox =
+                $"{(lon - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                $"{(lat - offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                $"{(lon + offset).ToString(CultureInfo.InvariantCulture)}%2C" +
+                $"{(lat + offset).ToString(CultureInfo.InvariantCulture)}";
+
+            return $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latS}%2C{lonS}";
         }
-
     }
 }

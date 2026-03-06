@@ -53,9 +53,9 @@ else
         @foreach (var e in @Entries)
         {
             <li style="@GetCardInlineStyle()">
-                <div style="font-weight:600;margin-bottom:6px">@e.fechaActual</div>
-                <div>🕒 Local: @e.horaLocal · 🌍 UTC: @e.horaUtc · (@e.desfase)</div>
-                <div>⏱ @e.tipoHorario</div>
+                <div style="font-weight:600;margin-bottom:6px">@e.FechaActual</div>
+                <div>🕒 Local: @e.HoraLocal · 🌍 UTC: @e.HoraUtc · (@e.Desfase)</div>
+                <div>⏱ @e.TipoHorario</div>
                 <div>📍 @e.Location</div>
                
                 @{var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(e.Latitude, e.Longitude);}

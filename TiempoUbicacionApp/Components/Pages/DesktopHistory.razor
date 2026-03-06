@@ -4,6 +4,7 @@
 @using TiempoUbicacionApp.Services
 @inject LocationDatabaseService DatabaseService
 @inject IAlertService AlertService
+@inject ISettingsService SettingsService
 
 <MudPaper Class="pa-4">
     <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">📜 Histórico de registros</MudText>
@@ -29,7 +30,6 @@
                 <span>Refrescar</span>
             </MudStack>
         </MudButton>
-
     </MudStack>
 
     @if (_loading)
@@ -40,7 +40,7 @@
     {
         <MudAlert Severity="Severity.Error">@_error</MudAlert>
     }
-    else if (@Entries.Count() == 0)
+    else if (!Entries.Any())
     {
         <MudAlert Severity="Severity.Info">No hay registros guardados.</MudAlert>
     }
@@ -56,23 +56,24 @@
                 <MudTh>Lat / Lon</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Fecha">@context.fechaActual</MudTd>
-                <MudTd DataLabel="Hora Local">@context.horaLocal</MudTd>
-                <MudTd DataLabel="UTC">@context.horaUtc (@context.desfase)</MudTd>
-                <MudTd DataLabel="Horario">@context.tipoHorario</MudTd>
+                <MudTd DataLabel="Fecha">@context.FechaActual</MudTd>
+                <MudTd DataLabel="Hora Local">@context.HoraLocal</MudTd>
+                <MudTd DataLabel="UTC">@context.HoraUtc (@context.Desfase)</MudTd>
+                <MudTd DataLabel="Horario">@context.TipoHorario</MudTd>
                 <MudTd DataLabel="Ubicación">@context.Location</MudTd>
                 <MudTd DataLabel="Lat / Lon">
                     @{
-                        // var mapUrl = CoordinatesHelper.GetOSMEmbedUrl(context.Latitude, context.Longitude);
-                        // var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(context.Latitude, context.Longitude);
-                        var mapUrl = GetMapUrlAsync(context.Latitude, context.Longitude, 10, isEmbedded: false);
-                        var hasCoordinates = !string.IsNullOrEmpty(context.Latitude) && !string.IsNullOrEmpty(context.Longitude);
+                        var hasCoords = !string.IsNullOrEmpty(context.Latitude) &&
+                        !string.IsNullOrEmpty(context.Longitude);
+                        _mapUrls.TryGetValue(context.Id, out var mapUrl);
                     }
-                    @if (!string.IsNullOrEmpty(mapUrl.Result))
+                    @if (!string.IsNullOrEmpty(mapUrl))
                     {
-                        <MudLink Href="@mapUrl.Result" Target="_blank" Class="coord-link">@context.Latitude, @context.Longitude</MudLink>
+                        <MudLink Href="@mapUrl" Target="_blank" Class="coord-link">
+                            @context.Latitude, @context.Longitude
+                        </MudLink>
                     }
-                    else if (hasCoordinates)
+                    else if (hasCoords)
                     {
                         <span>@context.Latitude, @context.Longitude</span>
                     }
@@ -88,13 +89,16 @@
 
 @code {
     [Parameter] public IEnumerable<LocationEntry> Entries { get; set; } = Enumerable.Empty<LocationEntry>();
-
     [Parameter] public EventCallback OnBackup { get; set; }
     [Parameter] public EventCallback OnRestore { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
 
     private bool _loading = true;
-    private string _error = "";
+    private string _error = string.Empty;
+
+    // CAMBIO: precalculamos las URLs para evitar el .Result en el template.
+    // Clave = LocationEntry.Id, Valor = URL del mapa.
+    private Dictionary<int, string> _mapUrls = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,8 +117,25 @@
         }
     }
 
-    private async Task<string> GetMapUrlAsync(string latitude, string longitude, int zoom, bool isEmbedded)
+    protected override async Task OnParametersSetAsync()
     {
-        return await CoordinatesHelper.GetMapUrlAsync(latitude, longitude, zoom, isEmbedded);
+        // Precalcular las URLs de mapa para todas las entradas actuales.
+        // Esto se ejecuta cuando el parámetro Entries cambia (ej. tras Refresh).
+        _mapUrls = new Dictionary<int, string>();
+
+        foreach (var entry in Entries)
+        {
+            if (string.IsNullOrEmpty(entry.Latitude) || string.IsNullOrEmpty(entry.Longitude))
+                continue;
+
+            var url = await CoordinatesHelper.GetMapUrlAsync(
+                entry.Latitude, entry.Longitude,
+                SettingsService,
+                zoom: 10,
+                isEmbedded: false);
+
+            if (!string.IsNullOrEmpty(url))
+                _mapUrls[entry.Id] = url;
+        }
     }
 }

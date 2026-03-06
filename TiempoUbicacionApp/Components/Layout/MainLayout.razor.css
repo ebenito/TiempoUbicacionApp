@@ -1,20 +1,91 @@
+/* ============================================================================
+   VARIABLES GLOBALES - Safe Area y dimensiones
+   ============================================================================ */
+
+:root {
+    --safe-area-top: max(0px, env(safe-area-inset-top));
+    --safe-area-bottom: max(0px, env(safe-area-inset-bottom));
+    --safe-area-left: max(0px, env(safe-area-inset-left));
+    --safe-area-right: max(0px, env(safe-area-inset-right));
+    --appbar-height: 64px;
+    --transition-fast: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================================
+   LAYOUT PRINCIPAL
+   ============================================================================ */
+
+:deep(.app-layout) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ============================================================================
+   APPBAR - posicionamiento unificado (elimina conflicto con inline styles)   
+   ============================================================================ */
+
+:deep(.mud-appbar) {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1300;
+    flex-shrink: 0;
+    /* Safe area de Android: empuja el AppBar por debajo de la status bar */
+    padding-top: var(--safe-area-top);
+    /* Transición suave al cambiar tema */
+    transition: background-color var(--transition-fast), padding var(--transition-fast);
+}
+
+/* ============================================================================
+   CONTENIDO PRINCIPAL
+   ============================================================================ */
+
+:deep(.app-main-content) {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    /*
+     * Con `position: sticky` en el AppBar no es estrictamente necesario,
+     * pero lo mantenemos por compatibilidad con MudBlazor que puede inyectar
+     * su propio margin en algunas versiones.
+     */
+    margin-top: var(--appbar-height);
+    /* Respetar safe areas en todos los lados */
+    padding-top: max(0px, calc(var(--safe-area-top) - var(--appbar-height)));
+    padding-bottom: var(--safe-area-bottom);
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+}
+
+:deep(.mud-container) {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ============================================================================
+   DRAWER LATERAL
+   ============================================================================ */
+
 .mud-drawer {
     background-color: #2c3e50;
     color: white;
 }
 
 /* ============================================================================
-   MATERIAL DESIGN 3 ANIMATIONS - Transiciones fluidas y modernas
+   MATERIAL DESIGN 3 - Animaciones y transiciones
    ============================================================================ */
 
 .nav-link-animation {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: all var(--transition-fast) !important;
     position: relative;
 }
 
-.nav-link-animation:hover {
-    transform: translateX(4px);
-}
+    .nav-link-animation:hover {
+        transform: translateX(4px);
+    }
 
 .transition-all {
     transition: all 0.3s ease !important;
@@ -29,57 +100,9 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* ============================================================================
-   ANDROID SAFE AREA HANDLING - Asegura que la UI sea visible en Android
-   ============================================================================ */
-
-:root {
-    --safe-area-top: max(0px, env(safe-area-inset-top));
-    --safe-area-bottom: max(0px, env(safe-area-inset-bottom));
-    --safe-area-left: max(0px, env(safe-area-inset-left));
-    --safe-area-right: max(0px, env(safe-area-inset-right));
-    --appbar-height: 64px;
-}
-
-/* El Layout principal debe respetar el safe area */
-:deep(.app-layout) {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    width: 100vw;
-}
-
-/* El AppBar debe estar visible sobre la status bar de Android */
-:deep(.mud-appbar) {
-    position: sticky;
-    top: 0;
-    z-index: 1200;
-    flex-shrink: 0;
-}
-
-/* El contenido principal debe estar debajo del AppBar y respetar safe areas */
-:deep(.app-main-content) {
-    flex: 1;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-
-    /* En Android, agregar padding para safe areas */
-    padding-top: max(0px, calc(var(--safe-area-top) - var(--appbar-height)));
-    padding-bottom: var(--safe-area-bottom);
-    padding-left: var(--safe-area-left);
-    padding-right: var(--safe-area-right);
-}
-
-/* Asegurar que el contenedor dentro del MainContent se adapta */
-:deep(.mud-container) {
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
 }

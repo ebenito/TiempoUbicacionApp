@@ -2,16 +2,14 @@
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
 @using TiempoUbicacionApp.Helpers
-@using CommunityToolkit.Maui.Alerts
 @inject IJSRuntime JS
 @inject IAlertService AlertService
 @inject ITimeZoneService TimeZoneService
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
 @inject ISettingsService SettingsService
-@implements IDisposable
 
-
+@implements IAsyncDisposable
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
 
@@ -45,7 +43,6 @@
     }
     else
     {
-        <!-- Card de Ubicación Actual -->
         <MudCard Class="mb-4" Elevation="2">
             <MudCardHeader>
                 <MudText Typo="Typo.h5" Color="Color.Primary">📍 Ubicación actual</MudText>
@@ -62,16 +59,17 @@
                 @if (!string.IsNullOrWhiteSpace(mapUrl))
                 {
                     <MudPaper Class="mt-4" Style="overflow: hidden; border-radius: 12px;" Elevation="1">
-                        <iframe width="100%" height="250" frameborder="0" src="@mapUrl" allowfullscreen style="border: none;"></iframe>
+                        <iframe width="100%" height="250" frameborder="0" src="@mapUrl"
+                                allowfullscreen style="border: none;"></iframe>
                     </MudPaper>
                 }
 
                 <MudStack Row="true" Spacing="2" Class="mt-4">
-                    <MudButton Variant="Variant.Filled" 
-                              Color="Color.Primary" 
-                              FullWidth 
-                              OnClick="RefreshLocation"
-                              StartIcon="@Icons.Material.Filled.Refresh">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth
+                               OnClick="RefreshLocation"
+                               StartIcon="@Icons.Material.Filled.Refresh">
                         Actualizar ubicación
                     </MudButton>
                 </MudStack>
@@ -79,33 +77,34 @@
         </MudCard>
     }
 
-    <!-- Botones de acción principales -->
     <MudStack Row="true" Spacing="2" Class="mt-4">
-        <MudButton Variant="Variant.Filled" 
-                  Color="Color.Primary" 
-                  FullWidth 
-                  OnClick="SaveData"
-                  StartIcon="@Icons.Material.Filled.Save">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth
+                   OnClick="SaveData"
+                   StartIcon="@Icons.Material.Filled.Save">
             💾 Guardar
         </MudButton>
-        <MudButton Variant="Variant.Outlined" 
-                  Color="Color.Secondary" 
-                  FullWidth 
-                  OnClick="ShareData"
-                  StartIcon="@Icons.Material.Filled.Share">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   FullWidth
+                   OnClick="ShareData"
+                   StartIcon="@Icons.Material.Filled.Share">
             📤 Compartir
         </MudButton>
     </MudStack>
 
 </MudContainer>
 
-
 @code {
-    string locationName = string.Empty, formattedLatitude = string.Empty, formattedLongitude = string.Empty, mapUrl = string.Empty;
-    string lat = "0", lon = "0";
-
-    string errorMessage = string.Empty;
-    bool isLoading = true;
+    // ── Estado de UI ──────────────────────────────────────────────────────
+    private string locationName = string.Empty;
+    private string formattedLatitude = string.Empty;
+    private string formattedLongitude = string.Empty;
+    private string mapUrl = string.Empty;
+    private string lat = "0", lon = "0";
+    private string errorMessage = string.Empty;
+    private bool isLoading = true;
 
     private string horaLocal = string.Empty;
     private string horaUtc = string.Empty;
@@ -115,137 +114,44 @@
     private int zona = 0;
     private bool isDst;
 
+    // ── Timers ────────────────────────────────────────────────────────────
+    // PeriodicTimer es más seguro que System.Threading.Timer para Blazor:
+    // - No necesita bloqueo por concurrencia, el bucle awaita antes de continuar.
+    // - Se cancela limpiamente con CancellationToken.
+    private CancellationTokenSource _clockCts = new();
+    private CancellationTokenSource _autoRefreshCts = new();
+    private int _currentRefreshInterval = -1;
+    private int _isAutoRefreshRunning = 0;
 
-    private System.Threading.Timer clockTimer;
-    private System.Threading.Timer? autoRefreshTimer;
-    private int currentRefreshInterval = -1;
-    private int isAutoRefreshRunning;
+    // ── Ciclo de vida ─────────────────────────────────────────────────────
 
-    protected override void OnInitialized()  
-    {  
-        clockTimer = new System.Threading.Timer(async _ => await ActualizarDatosAsync(), null, 0, 1000);  
-    }  
-
-    protected override async Task OnParametersSetAsync()
+    protected override void OnInitialized()
     {
-        await ConfigureAutoRefreshTimerAsync();
-    }
-
-    public void Dispose()
-    {
-        clockTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-        clockTimer?.Dispose();
-        StopAutoRefreshTimer();
-    }
-
-    private async Task ConfigureAutoRefreshTimerAsync()
-    {
-        var refreshInterval = await SettingsService.GetRefreshIntervalAsync();
-
-        if (refreshInterval == currentRefreshInterval)
-        {
-            return;
-        }
-
-        StopAutoRefreshTimer();
-        currentRefreshInterval = refreshInterval;
-
-        if (refreshInterval <= 0)
-        {
-            return;
-        }
-
-        autoRefreshTimer = new System.Threading.Timer(
-            async _ => await AutoRefreshLocationCallbackAsync(),
-            null,
-            TimeSpan.FromSeconds(refreshInterval),
-            TimeSpan.FromSeconds(refreshInterval));
-    }
-
-    private void StopAutoRefreshTimer()
-    {
-        autoRefreshTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-        autoRefreshTimer?.Dispose();
-        autoRefreshTimer = null;
-    }
-
-    private async Task AutoRefreshLocationCallbackAsync()
-    {
-        if (Interlocked.Exchange(ref isAutoRefreshRunning, 1) == 1)
-        {
-            return;
-        }
-
-        try
-        {
-            await InvokeAsync(async () => await RefreshLocationCoreAsync(showMessages: false));
-        }
-        finally
-        {
-            Interlocked.Exchange(ref isAutoRefreshRunning, 0);
-        }
-    }
-
-    private async Task ActualizarDatosAsync()
-    {
-        var now = DateTime.Now;
-        var utcNow = DateTime.UtcNow;
-        var offset = TimeZoneInfo.Local.GetUtcOffset(now);
-
-        horaLocal = now.ToString("HH:mm:ss");
-        horaUtc = utcNow.ToString("HH:mm:ss");
-        fechaActual = now.ToString("dddd, dd MMMM yyyy");
-        offsetFormatted = offset >= TimeSpan.Zero ? $"+{offset:hh\\:mm}" : $"-{offset:hh\\:mm}";
-        tipoHorario = TimeZoneInfo.Local.IsDaylightSavingTime(now) ? "Horario de ahorro de luz (verano)" : "Horario estándar (invierno)";
-
-        await InvokeAsync(StateHasChanged);
+        // Lanzamos el reloj en background sin bloquear el render inicial
+        _ = RunClockAsync(_clockCts.Token);
     }
 
     protected override async Task OnInitializedAsync()
     {
         try
-        {   
+        {
             var location = await GeolocationService.GetCurrentLocationAsync();
-
-            // Usamos InvariantCulture para asegurar que siempre haya puntos decimales
             var culture = System.Globalization.CultureInfo.InvariantCulture;
 
-            if (location.Name != null && location.Lat != 0)
+            if (location.Lat != 0)
             {
                 locationName = location.Name;
                 formattedLatitude = location.FormattedLatitude;
                 formattedLongitude = location.FormattedLongitude;
                 zona = TimeZoneService.GetStandardGMTZone();
                 isDst = TimeZoneService.IsDaylightSavingNow();
-
                 lat = location.Lat.ToString(culture);
                 lon = location.Lng.ToString(culture);
-
-                // Cálculo del Bounding Box para OSM (Zoom aprox 15)
-                // double offset = 0.005;
-                // string bbox = $"{(location.Lng - offset).ToString(culture)}%2C" +
-                //                 $"{(location.Lat - offset).ToString(culture)}%2C" +
-                //                 $"{(location.Lng + offset).ToString(culture)}%2C" +
-                //                 $"{(location.Lat + offset).ToString(culture)}";
-
-                // mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={lat}%2C{lon}";
                 mapUrl = await GetMapUrlAsync(lat, lon, 15, isEmbedded: true);
             }
-            else            
+            else
             {
-                // Valores por defecto (Casto Celtíbero)
-                locationName = "Casto Celtíbero, Olmeda de Cobeta";
-                formattedLatitude = "40° 51' 33\" N";
-                formattedLongitude = "02° 12' 32\" O";
-                zona = TimeZoneService.GetStandardGMTZone();
-                isDst = TimeZoneService.IsDaylightSavingNow();
-
-                // Coordenadas fijas para el default
-                string defLat = "40.8591";
-                string defLon = "-2.2088";
-                mapUrl = await GetMapUrlAsync(defLat, defLon, 15, isEmbedded: true);
-                // mapUrl = $"https://www.openstreetmap.org/export/embed.html?bbox={defBbox}&layer=mapnik&marker={defLat}%2C{defLon}";
-                // mapUrl = $"https://maps.google.com/maps?q={lat},{lon}&z=15&output=embed";
+                SetDefaultLocation();
             }
         }
         catch (Exception ex)
@@ -259,10 +165,97 @@
         }
     }
 
-    private async Task<string> GetMapUrlAsync(string latitude, string longitude, int zoom, bool isEmbedded)
+    protected override async Task OnParametersSetAsync()
     {
-        return await CoordinatesHelper.GetMapUrlAsync(latitude, longitude, zoom, isEmbedded);
+        await ConfigureAutoRefreshTimerAsync();
     }
+
+    // ── IAsyncDisposable ──────────────────────────────────────────────────
+
+    public async ValueTask DisposeAsync()
+    {
+        // Cancelar y liberar ambos timers
+        await _clockCts.CancelAsync();
+        _clockCts.Dispose();
+
+        await _autoRefreshCts.CancelAsync();
+        _autoRefreshCts.Dispose();
+    }
+
+    // ── Reloj (PeriodicTimer) ─────────────────────────────────────────────
+
+    private async Task RunClockAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+                await ActualizarDatosAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal al destruir el componente
+        }
+    }
+
+    private async Task ActualizarDatosAsync()
+    {
+        var now = DateTime.Now;
+        var utcNow = DateTime.UtcNow;
+        var offset = TimeZoneInfo.Local.GetUtcOffset(now);
+
+        horaLocal = now.ToString("HH:mm:ss");
+        horaUtc = utcNow.ToString("HH:mm:ss");
+        fechaActual = now.ToString("dddd, dd MMMM yyyy");
+        offsetFormatted = offset >= TimeSpan.Zero ? $"+{offset:hh\\:mm}" : $"-{offset:hh\\:mm}";
+        tipoHorario = TimeZoneInfo.Local.IsDaylightSavingTime(now)
+            ? "Horario de ahorro de luz (verano)"
+            : "Horario estándar (invierno)";
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ── Auto-refresco (PeriodicTimer) ─────────────────────────────────────
+
+    private async Task ConfigureAutoRefreshTimerAsync()
+    {
+        var refreshInterval = await SettingsService.GetRefreshIntervalAsync();
+        if (refreshInterval == _currentRefreshInterval) return;
+
+        // Cancelar el timer anterior
+        await _autoRefreshCts.CancelAsync();
+        _autoRefreshCts.Dispose();
+        _autoRefreshCts = new CancellationTokenSource();
+
+        _currentRefreshInterval = refreshInterval;
+
+        if (refreshInterval > 0)
+            _ = RunAutoRefreshAsync(refreshInterval, _autoRefreshCts.Token);
+    }
+
+    private async Task RunAutoRefreshAsync(int intervalSeconds, CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(intervalSeconds));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                // Evitar llamadas solapadas si la geolocalización tarda más que el intervalo
+                if (Interlocked.Exchange(ref _isAutoRefreshRunning, 1) == 1) continue;
+                try
+                {
+                    await InvokeAsync(async () => await RefreshLocationCoreAsync(showMessages: false));
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _isAutoRefreshRunning, 0);
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    // ── Ubicación ─────────────────────────────────────────────────────────
 
     private async Task RefreshLocation()
     {
@@ -278,8 +271,7 @@
 
             if (location.Name == "Error al obtener datos")
             {
-                StopAutoRefreshTimer();
-                currentRefreshInterval = 0;                
+                await StopAutoRefreshAsync();
             }
 
             if (location.Lat != 0 && location.Lng != 0)
@@ -289,7 +281,6 @@
                 formattedLongitude = location.FormattedLongitude;
                 zona = TimeZoneService.GetStandardGMTZone();
                 isDst = TimeZoneService.IsDaylightSavingNow();
-
                 lat = location.Lat.ToString(culture);
                 lon = location.Lng.ToString(culture);
                 mapUrl = await GetMapUrlAsync(lat, lon, 15, isEmbedded: true);
@@ -297,112 +288,97 @@
                 await InvokeAsync(StateHasChanged);
 
                 if (showMessages)
-                {
                     await AlertService.ShowToastAsync("Ubicación actualizada.");
-                }
 
                 return true;
             }
 
             if (showMessages)
-            {
                 await AlertService.ShowLongToastAsync("No se pudo actualizar la ubicación.");
-            }
 
             return false;
         }
         catch (Exception ex)
         {
             errorMessage = "Error al actualizar ubicación: " + ex.Message;
-            StopAutoRefreshTimer();
-            currentRefreshInterval = 0;
+            await StopAutoRefreshAsync();
 
-            await AlertService.ShowLongToastAsync(
-                showMessages
-                    ? errorMessage
-                    : "Se desactivó la actualización automática por un error al obtener la ubicación.");
+            await AlertService.ShowLongToastAsync(showMessages
+                ? errorMessage
+                : "Se desactivó la actualización automática por un error.");
 
             await InvokeAsync(StateHasChanged);
             return false;
         }
     }
-   
-    async Task SaveData()  
-    {  
-        await DatabaseService.SaveEntryAsync(new LocationEntry  
-        {  
-            Date = DateTime.Now,  
-            horaLocal = horaLocal,
-            horaUtc = horaUtc,
-            fechaActual = fechaActual,
-            desfase = offsetFormatted,
-            tipoHorario = tipoHorario,
-            Location = locationName,  
-            Latitude = formattedLatitude,  
-            Longitude = formattedLongitude  
-        });  
-            
-        await AlertService.ShowToastAsync("Datos guardados correctamente"); 
-    }  
 
-    async Task ShareData()
+    private async Task StopAutoRefreshAsync()
     {
-      string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+        _currentRefreshInterval = 0;
+        await _autoRefreshCts.CancelAsync();
+    }
+
+    // ── Guardar y Compartir ───────────────────────────────────────────────
+
+    private async Task SaveData()
+    {
+        await DatabaseService.SaveEntryAsync(new LocationEntry
+        {
+            Date = DateTime.Now,
+            HoraLocal = horaLocal,
+            HoraUtc = horaUtc,
+            FechaActual = fechaActual,
+            Desfase = offsetFormatted,
+            TipoHorario = tipoHorario,
+            Location = locationName,
+            Latitude = formattedLatitude,
+            Longitude = formattedLongitude
+        });
+
+        await AlertService.ShowToastAsync("Datos guardados correctamente");
+    }
+
+    private async Task ShareData()
+    {
+        string text =
+            $"📅 Fecha: {fechaActual}\n" +
+            $"🕒 Hora local: {horaLocal}\n" +
+            $"🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n" +
+            $"🕓 Periodo: {tipoHorario}\n" +
+            $"📍 Ubicación: {locationName}\n" +
+            $"🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
 
         try
         {
-            // Esto abrirá el selector nativo (WhatsApp, Telegram, etc.) directamente
             await Share.Default.RequestAsync(new ShareTextRequest
             {
                 Title = "Mis datos de ubicación y tiempo",
                 Text = text,
-                Subject = "Datos de ubicación" // Útil para apps de Email como Outlook
+                Subject = "Datos de ubicación"
             });
         }
-        catch (Exception ex)
+        catch
         {
-            // Si falla el compartir nativo (ej. el usuario cancela), copiamos al portapapeles
             await Clipboard.SetTextAsync(text);
             await AlertService.ShowToastAsync("Copiado al portapapeles.");
         }
     }
 
-    // async Task ShareData()
-    // {
-    //     string text = $"📅 Fecha: {fechaActual}\n🕒 Hora local: {horaLocal}\n🌍 Hora UTC: {horaUtc} (Desfase: {offsetFormatted})\n🕓 Periodo: {tipoHorario}\n📍 Ubicación: {locationName}\n🧭 Lat: {formattedLatitude}, Lon: {formattedLongitude}";
+    // ── Helpers ───────────────────────────────────────────────────────────
 
-    //     try
-    //     {
-    //         bool canShare = await JS.InvokeAsync<bool>("canShare");
+    /// <summary>
+    /// CAMBIO: pasamos SettingsService explícitamente (elimina MauiSettingsService.Current).
+    /// </summary>
+    private Task<string?> GetMapUrlAsync(string latitude, string longitude, int zoom, bool isEmbedded) =>
+        CoordinatesHelper.GetMapUrlAsync(latitude, longitude, SettingsService, zoom, isEmbedded);
 
-    //         if (canShare)
-    //         {
-    //             // Usar el cuadro de compartir nativo si está disponible
-    //             await JS.InvokeVoidAsync("invokeShare", new
-    //             {
-    //                 title = "Mis datos de ubicación y tiempo",
-    //                 text = text
-    //             });
-    //         }
-    //         else
-    //         {
-    //             // Copia al portapapeles usando MAUI
-    //             await Clipboard.SetTextAsync(text);
-    //             await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
-    //         }
-    //     }
-    //     catch (JSException jsEx)
-    //     {
-    //         Console.WriteLine($"Error al compartir: {jsEx.Message}");
-    //         await Clipboard.SetTextAsync(text);
-    //         await AlertService.ShowToastAsync("Se han copiado los datos al portapapeles.");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Error inesperado: {ex.Message}");
-    //         await AlertService.ShowToastAsync("Ocurrió un error al intentar compartir.");
-    //     }
-    // }
-
-
+    private async Task SetDefaultLocation()
+    {
+        locationName = "Casto Celtíbero, Olmeda de Cobeta";
+        formattedLatitude = "40° 51' 33\" N";
+        formattedLongitude = "02° 12' 32\" O";
+        zona = TimeZoneService.GetStandardGMTZone();
+        isDst = TimeZoneService.IsDaylightSavingNow();
+        mapUrl = await GetMapUrlAsync("40.8591", "-2.2088", 15, isEmbedded: true) ?? string.Empty;
+    }
 }

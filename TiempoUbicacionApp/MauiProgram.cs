@@ -10,7 +10,6 @@ using TiempoUbicacionApp.Platforms.Android;
 using TiempoUbicacionApp.Platforms.Windows;
 #endif
 
-
 namespace TiempoUbicacionApp
 {
     public static class MauiProgram
@@ -21,7 +20,7 @@ namespace TiempoUbicacionApp
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
-                .UseMauiCommunityToolkitMaps("YOUR_MAPS_KEY")
+                .UseMauiCommunityToolkitMaps(Environment.GetEnvironmentVariable("MAPS_API_KEY") ?? string.Empty)
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -29,27 +28,42 @@ namespace TiempoUbicacionApp
 
             builder.Services.AddMauiBlazorWebView();
 
+            // ── Servicios de dominio ─────────────────────────────────────
             builder.Services.AddSingleton<ITimeZoneService, TimeZoneService>();
             builder.Services.AddSingleton<ISettingsService, MauiSettingsService>();
             builder.Services.AddSingleton<ThemeService>();
-            builder.Services.AddMudServices();
-
-            builder.Services.AddPlatformServices(); // Se agrega el registro de servicios de la plataforma (Método 1 de diversificación por plataforma)
-
-            #if WINDOWS // Método 2 de diversificación por plataforma
-                builder.Services.AddSingleton<IAlertService, MauiAlertService>(); // Usa MudBlazor
-#           else
-                builder.Services.AddSingleton<IAlertService, NativeAlertService>(); // Usa CommunityToolkit
-            #endif
-
             builder.Services.AddSingleton<LocationDatabaseService>();
-            builder.Services.AddSingleton<GeolocationService>();
             builder.Services.AddSingleton<App>();
 
+            // ── BackupService centralizado  ──
+            builder.Services.AddSingleton<BackupService>();
+
+            // ── HttpClient con IHttpClientFactory ────────────────────────
+            // Mejor gestión del pool de conexiones TCP.
+            builder.Services.AddHttpClient<GeolocationService>(client =>
+            {
+                client.DefaultRequestHeaders.Add(
+                    "User-Agent",
+                    "TiempoUbicacionApp/1.0 (info@tubkala.com)");
+            });
+
+            // ── MudBlazor ────────────────────────────────────────────────
+            builder.Services.AddMudServices();
+
+            // ── Servicios de plataforma ──────────────────────────────────
+            // Método 1: registro específico de plataforma (IFeedbackService)
+            builder.Services.AddPlatformServices();
+
+            // Método 2: IAlertService diferente por plataforma
+#if WINDOWS
+            builder.Services.AddSingleton<IAlertService, MauiAlertService>();
+#else
+            builder.Services.AddSingleton<IAlertService, NativeAlertService>();
+#endif
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
