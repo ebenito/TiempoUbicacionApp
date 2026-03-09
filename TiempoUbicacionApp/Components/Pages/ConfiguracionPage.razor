@@ -1,88 +1,131 @@
-﻿@page "/configuracion"
+@page "/configuracion"
 @using TiempoUbicacionApp.Services
 @inject ThemeService ThemeService
 @inject ISettingsService SettingsService
 @inject IAlertService AlertService
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
-    <MudCard Elevation="2" Class="p-4">
-        <MudCardHeader>
-            <MudText Typo="Typo.h5" Color="Color.Primary">⚙️ Configuración de la App</MudText>
-        </MudCardHeader>
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-4">
 
-        <MudDivider Class="my-2" />
+    <!-- Cabecera -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-5">
+        <span style="width:10px;height:10px;border-radius:50%;background:#14b8a6;display:inline-block;"></span>
+        <MudText Typo="Typo.h5" Style="font-weight:700;letter-spacing:-.01em;">Configuración</MudText>
+    </MudStack>
 
-        <MudCardContent>
-            <!-- Selector de Tema - Switch con cambio inmediato -->
-            <MudText Typo="Typo.subtitle2" Class="mb-3">🎨 Tema de la aplicación</MudText>
-            <MudStack Row="true" Spacing="2" Class="mb-6">
-                <MudButton Variant="@(_isDarkMode ? Variant.Text : Variant.Filled)"
-                          Color="Color.Primary"
-                          OnClick="@(() => ToggleTheme(false))"
-                          FullWidth="true">
-                    ☀️ Claro
-                </MudButton>
-                <MudButton Variant="@(_isDarkMode ? Variant.Filled : Variant.Text)"
-                          Color="Color.Primary"
-                          OnClick="@(() => ToggleTheme(true))"
-                          FullWidth="true">
-                    🌙 Oscuro
-                </MudButton>
+    <!-- ── SECCIÓN: Apariencia ─────────────────────────────────────────── -->
+    <div style="margin-bottom:8px;">
+        <span style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);">
+            Apariencia
+        </span>
+    </div>
+
+    <MudCard Elevation="0" Class="mb-4">
+        <MudCardContent Class="px-4 py-3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudStack Spacing="0">
+                    <MudText Style="font-weight:600;font-size:.9rem;">Tema</MudText>
+                    <MudText Style="font-size:.8rem;color:var(--slate-400);">
+                        @(_isDarkMode ? "Modo oscuro activo" : "Modo claro activo")
+                    </MudText>
+                </MudStack>
+
+                <!-- Toggle pill -->
+                <div style="display:flex;gap:4px;background:var(--slate-100);border-radius:8px;padding:3px;">
+                    <button @onclick="@(() => ToggleTheme(false))"
+                            style="padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:.8rem;font-weight:600;font-family:inherit;transition:all 200ms ease;
+                                   @(!_isDarkMode ? "background:#0d9488;color:white;box-shadow:0 1px 4px rgba(13,148,136,.35);" : "background:transparent;color:var(--slate-600);")">
+                        ☀️ Claro
+                    </button>
+                    <button @onclick="@(() => ToggleTheme(true))"
+                            style="padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:.8rem;font-weight:600;font-family:inherit;transition:all 200ms ease;
+                                   @(_isDarkMode ? "background:#0d9488;color:white;box-shadow:0 1px 4px rgba(13,148,136,.35);" : "background:transparent;color:var(--slate-600);")">
+                        🌙 Oscuro
+                    </button>
+                </div>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+
+    <!-- ── SECCIÓN: Ubicación ──────────────────────────────────────────── -->
+    <div style="margin-bottom:8px;">
+        <span style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);">
+            Ubicación
+        </span>
+    </div>
+
+    <MudCard Elevation="0" Class="mb-4">
+        <MudCardContent Class="px-4 py-3">
+
+            <!-- Intervalo -->
+            <MudStack Row="true" AlignItems="AlignItems.Center"
+                      Justify="Justify.SpaceBetween" Class="mb-1">
+                <MudStack Spacing="0">
+                    <MudText Style="font-weight:600;font-size:.9rem;">Actualización automática</MudText>
+                    <MudText Style="font-size:.8rem;color:var(--slate-400);">
+                        Intervalo de refresco de la ubicación
+                    </MudText>
+                </MudStack>
             </MudStack>
 
-            <!-- Intervalo de actualización -->
-            <MudSelect T="int"
-                       Label="Intervalo de actualización"
-                       @bind-Value="_refreshInterval"
-                       Variant="Variant.Filled"
-                       Class="mb-6">
-                <MudSelectItem Value="0">No actualizar automaticamente</MudSelectItem>
-                <MudSelectItem Value="15">15 segundos</MudSelectItem>
-                <MudSelectItem Value="30">30 segundos</MudSelectItem>
-                <MudSelectItem Value="60">1 minuto</MudSelectItem>
-                <MudSelectItem Value="120">2 minutos</MudSelectItem>
-                <MudSelectItem Value="300">5 minutos</MudSelectItem>
-                <MudSelectItem Value="900">15 minutos</MudSelectItem>
-                <MudSelectItem Value="1800">30 minutos</MudSelectItem>
-                <MudSelectItem Value="3600">60 minutos</MudSelectItem>
+            <MudSelect T="int" @bind-Value="_refreshInterval"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Style="margin-top:8px;">
+                <MudSelectItem Value="0">Sin actualización automática</MudSelectItem>
+                <MudSelectItem Value="15">Cada 15 segundos</MudSelectItem>
+                <MudSelectItem Value="30">Cada 30 segundos</MudSelectItem>
+                <MudSelectItem Value="60">Cada minuto</MudSelectItem>
+                <MudSelectItem Value="120">Cada 2 minutos</MudSelectItem>
+                <MudSelectItem Value="300">Cada 5 minutos</MudSelectItem>
+                <MudSelectItem Value="900">Cada 15 minutos</MudSelectItem>
+                <MudSelectItem Value="1800">Cada 30 minutos</MudSelectItem>
+                <MudSelectItem Value="3600">Cada hora</MudSelectItem>
             </MudSelect>
 
+            <MudDivider Class="my-4" />
+
             <!-- Proveedor de mapas -->
-            <MudSelect T="MapProvider"
-                       Label="Proveedor de mapas"
-                       @bind-Value="_mapProvider"
-                       Variant="Variant.Filled"
-                       Class="mb-6">
+            <MudStack Spacing="0" Class="mb-1">
+                <MudText Style="font-weight:600;font-size:.9rem;">Proveedor de mapas</MudText>
+                <MudText Style="font-size:.8rem;color:var(--slate-400);">
+                    Servicio de cartografía embebido
+                </MudText>
+            </MudStack>
+
+            <MudSelect T="MapProvider" @bind-Value="_mapProvider"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Style="margin-top:8px;">
                 <MudSelectItem Value="MapProvider.Google">🗺️ Google Maps</MudSelectItem>
                 <MudSelectItem Value="MapProvider.OpenStreetMap">🌍 OpenStreetMap</MudSelectItem>
             </MudSelect>
 
-            <!-- Botones de acción -->
-            <MudStack Row="true" Spacing="3" Class="mt-6">
-                <MudButton OnClick="GuardarConfiguracion"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Size="Size.Medium"
-                           FullWidth="true">
-                    💾 Guardar configuración
-                </MudButton>
-            </MudStack>
         </MudCardContent>
     </MudCard>
+
+    <!-- ── BOTÓN GUARDAR ──────────────────────────────────────────────── -->
+    <MudButton OnClick="GuardarConfiguracion"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               FullWidth
+               Style="height:44px;font-weight:600;font-size:.9rem;">
+        Guardar configuración
+    </MudButton>
+
 </MudContainer>
 
 @code {
-    private bool _isDarkMode;
-    private int _refreshInterval;
+    private bool        _isDarkMode;
+    private int         _refreshInterval;
     private MapProvider _mapProvider;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _isDarkMode = await SettingsService.GetIsDarkModeAsync();
+            _isDarkMode      = await SettingsService.GetIsDarkModeAsync();
             _refreshInterval = await SettingsService.GetRefreshIntervalAsync();
-            _mapProvider = await SettingsService.GetMapProviderAsync();
+            _mapProvider     = await SettingsService.GetMapProviderAsync();
         }
         catch (Exception ex)
         {
@@ -104,12 +147,11 @@
             await SettingsService.SetRefreshIntervalAsync(_refreshInterval);
             await SettingsService.SetMapProviderAsync(_mapProvider);
             ThemeService.SetDarkMode(_isDarkMode);
-
-            await AlertService.ShowToastAsync("✅ Configuración guardada correctamente.");
+            await AlertService.ShowToastAsync("✅ Configuración guardada.");
         }
         catch (Exception ex)
         {
-            await AlertService.ShowToastAsync("❌ Error al guardar la configuración: " + ex.Message);
+            await AlertService.ShowToastAsync("❌ Error: " + ex.Message);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿@using MudBlazor
+@using MudBlazor
 @using TiempoUbicacionApp.Helpers
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
@@ -6,136 +6,154 @@
 @inject IAlertService AlertService
 @inject ISettingsService SettingsService
 
-<MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">📜 Histórico de registros</MudText>
+<MudStack Spacing="0">
 
-    <MudStack Row="true" Spacing="2" Class="mb-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnBackup" Style="min-width: 165px;">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Medium" />
-                <span>Backup</span>
-            </MudStack>
-        </MudButton>
+    <!-- Cabecera de sección -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <span style="width:10px;height:10px;border-radius:50%;background:#14b8a6;display:inline-block;"></span>
+            <MudText Typo="Typo.h5" Style="font-weight:700;letter-spacing:-.01em;">Historial</MudText>
+            @if (Entries.Any())
+            {
+                <span class="badge badge-slate">@Entries.Count() registros</span>
+            }
+        </MudStack>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="OnRestore" Style="min-width: 165px;">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.CloudDownload" Size="Size.Medium" />
-                <span>Restaurar</span>
-            </MudStack>
-        </MudButton>
-
-        <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OnRefresh" Style="min-width: 165px;">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.Refresh" Size="Size.Medium" />
-                <span>Refrescar</span>
-            </MudStack>
-        </MudButton>
+        <!-- Acciones compactas -->
+        <MudStack Row="true" Spacing="1">
+            <MudTooltip Text="Backup">
+                <MudIconButton Icon="@Icons.Material.Filled.CloudUpload"
+                               Color="Color.Primary" Size="Size.Small"
+                               OnClick="OnBackup" />
+            </MudTooltip>
+            <MudTooltip Text="Restaurar">
+                <MudIconButton Icon="@Icons.Material.Filled.CloudDownload"
+                               Color="Color.Success" Size="Size.Small"
+                               OnClick="OnRestore" />
+            </MudTooltip>
+            <MudTooltip Text="Refrescar">
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                               Color="Color.Default" Size="Size.Small"
+                               OnClick="OnRefresh" />
+            </MudTooltip>
+        </MudStack>
     </MudStack>
 
     @if (_loading)
     {
-        <MudText>Cargando…</MudText>
+        <MudStack AlignItems="AlignItems.Center" Class="py-10">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Small" />
+        </MudStack>
     }
     else if (!string.IsNullOrEmpty(_error))
     {
-        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        <MudAlert Severity="Severity.Error" Style="border-radius:10px;">@_error</MudAlert>
     }
     else if (!Entries.Any())
     {
-        <MudAlert Severity="Severity.Info">No hay registros guardados.</MudAlert>
+        <MudCard Elevation="0" Style="border:1px dashed var(--slate-200);">
+            <MudCardContent Class="d-flex justify-center align-center py-10">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <span style="font-size:2rem;opacity:.35;">📭</span>
+                    <MudText Style="font-size:.8rem;color:var(--slate-400);letter-spacing:.05em;text-transform:uppercase;">
+                        Sin registros guardados
+                    </MudText>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
     }
     else
     {
-        <MudTable Items="@Entries" Dense="true" Hover="true" Bordered="true" Elevation="0" Striped="true">
+        <MudTable Items="@Entries" Dense="true" Hover="true"
+                  Elevation="0" Striped="false"
+                  Style="border-radius:12px;overflow:hidden;border:1px solid var(--slate-200);">
             <HeaderContent>
                 <MudTh>Fecha</MudTh>
-                <MudTh>Hora Local</MudTh>
-                <MudTh>UTC (Desfase)</MudTh>
+                <MudTh>Hora local</MudTh>
+                <MudTh>UTC</MudTh>
                 <MudTh>Horario</MudTh>
-                <MudTh>Ubicación</MudTh>
-                <MudTh>Lat / Lon</MudTh>
+                <MudTh>Lugar</MudTh>
+                <MudTh>Coordenadas</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Fecha">@context.FechaActual</MudTd>
-                <MudTd DataLabel="Hora Local">@context.HoraLocal</MudTd>
-                <MudTd DataLabel="UTC">@context.HoraUtc (@context.Desfase)</MudTd>
-                <MudTd DataLabel="Horario">@context.TipoHorario</MudTd>
-                <MudTd DataLabel="Ubicación">@context.Location</MudTd>
-                <MudTd DataLabel="Lat / Lon">
+                <MudTd DataLabel="Fecha">
+                    <span class="data-mono" style="font-size:.8rem;">@context.FechaActual</span>
+                </MudTd>
+                <MudTd DataLabel="Hora local">
+                    <span class="data-mono" style="color:var(--teal-600);font-weight:600;">@context.HoraLocal</span>
+                </MudTd>
+                <MudTd DataLabel="UTC">
+                    <span class="data-mono">@context.HoraUtc</span>
+                    <span style="font-size:.72rem;color:var(--slate-400);margin-left:4px;">@context.Desfase</span>
+                </MudTd>
+                <MudTd DataLabel="Horario">
+                    <span class="badge @(context.TipoHorario.Contains("verano") ? "badge-teal" : "badge-slate")"
+                          style="font-size:.65rem;">
+                        @(context.TipoHorario.Contains("verano") ? "🌞 DST" : "❄️ STD")
+                    </span>
+                </MudTd>
+                <MudTd DataLabel="Lugar">
+                    <span style="font-size:.85rem;">@context.Location</span>
+                </MudTd>
+                <MudTd DataLabel="Coordenadas">
                     @{
                         var hasCoords = !string.IsNullOrEmpty(context.Latitude) &&
-                        !string.IsNullOrEmpty(context.Longitude);
+                                        !string.IsNullOrEmpty(context.Longitude);
                         _mapUrls.TryGetValue(context.Id, out var mapUrl);
                     }
                     @if (!string.IsNullOrEmpty(mapUrl))
                     {
-                        <MudLink Href="@mapUrl" Target="_blank" Class="coord-link">
+                        <a href="@mapUrl" target="_blank" class="coord-link">
                             @context.Latitude, @context.Longitude
-                        </MudLink>
+                        </a>
                     }
                     else if (hasCoords)
                     {
-                        <span>@context.Latitude, @context.Longitude</span>
+                        <span class="data-mono" style="font-size:.78rem;">
+                            @context.Latitude, @context.Longitude
+                        </span>
                     }
                     else
                     {
-                        <span>N/A</span>
+                        <span style="color:var(--slate-400);font-size:.8rem;">—</span>
                     }
                 </MudTd>
             </RowTemplate>
         </MudTable>
     }
-</MudPaper>
+
+</MudStack>
 
 @code {
     [Parameter] public IEnumerable<LocationEntry> Entries { get; set; } = Enumerable.Empty<LocationEntry>();
-    [Parameter] public EventCallback OnBackup { get; set; }
+    [Parameter] public EventCallback OnBackup  { get; set; }
     [Parameter] public EventCallback OnRestore { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
 
-    private bool _loading = true;
-    private string _error = string.Empty;
-
-    // CAMBIO: precalculamos las URLs para evitar el .Result en el template.
-    // Clave = LocationEntry.Id, Valor = URL del mapa.
+    private bool   _loading = true;
+    private string _error   = string.Empty;
     private Dictionary<int, string> _mapUrls = new();
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            await DatabaseService.OpenAsync();
-        }
+        try   { await DatabaseService.OpenAsync(); }
         catch (Exception ex)
         {
-            _error = "No se pudo cargar el histórico en Windows.";
+            _error = "No se pudo cargar el histórico.";
             try { await AlertService.ShowLongToastAsync($"{_error}\n{ex.Message}"); } catch { }
         }
-        finally
-        {
-            _loading = false;
-        }
+        finally { _loading = false; }
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // Precalcular las URLs de mapa para todas las entradas actuales.
-        // Esto se ejecuta cuando el parámetro Entries cambia (ej. tras Refresh).
-        _mapUrls = new Dictionary<int, string>();
-
+        _mapUrls = new();
         foreach (var entry in Entries)
         {
-            if (string.IsNullOrEmpty(entry.Latitude) || string.IsNullOrEmpty(entry.Longitude))
-                continue;
-
+            if (string.IsNullOrEmpty(entry.Latitude) || string.IsNullOrEmpty(entry.Longitude)) continue;
             var url = await CoordinatesHelper.GetMapUrlAsync(
-                entry.Latitude, entry.Longitude,
-                SettingsService,
-                zoom: 10,
-                isEmbedded: false);
-
-            if (!string.IsNullOrEmpty(url))
-                _mapUrls[entry.Id] = url;
+                entry.Latitude, entry.Longitude, SettingsService, zoom: 10, isEmbedded: false);
+            if (!string.IsNullOrEmpty(url)) _mapUrls[entry.Id] = url;
         }
     }
 }

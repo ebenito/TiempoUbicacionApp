@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TiempoUbicacionApp"
              xmlns:components="clr-namespace:TiempoUbicacionApp.Components"
-             x:Class="TiempoUbicacionApp.MainPage">
+             x:Class="TiempoUbicacionApp.MainPage"
+             SafeAreaEdges="All">
 
     <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
         <BlazorWebView.RootComponents>

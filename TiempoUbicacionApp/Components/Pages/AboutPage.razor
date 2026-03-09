@@ -2,7 +2,8 @@
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
 
-    <MudCard Elevation="2" Class="p-4">
+    <!-- ── Card original: info + tecnologías ──────────────────────────── -->
+    <MudCard Elevation="2" Class="p-4 mb-4">
         <MudCardHeader>
             <MudText Typo="Typo.h5" Color="Color.Primary">ℹ️ Acerca de esta aplicación</MudText>
         </MudCardHeader>
@@ -13,12 +14,13 @@
             <MudStack Spacing="3">
                 <MudText><strong>🔢 Versión:</strong> 1.1.10</MudText>
                 <MudText><strong>👨‍💻 Desarrollador:</strong> Esteban Benito</MudText>
-                <MudText><strong>📧 Email:</strong> 
+                <MudText>
+                    <strong>📧 Email:</strong>
                     <MudLink Href="mailto:info@tubkala.com" Target="_blank">info@tubkala.com</MudLink>
                 </MudText>
-                
+
                 <MudDivider Class="my-2" />
-                
+
                 <MudText Typo="Typo.subtitle2" Class="mt-4">
                     <strong>Tecnologías utilizadas:</strong>
                 </MudText>
@@ -32,13 +34,76 @@
         </MudCardContent>
 
         <MudCardActions>
-            <MudButton Variant="Variant.Text" Color="Color.Primary" 
-                      Href="https://github.com/ebenito/TiempoUbicacionApp" 
-                      Target="_blank"
-                      StartIcon="@Icons.Custom.Brands.GitHub">
+            <MudButton Variant="Variant.Text" Color="Color.Primary"
+                       Href="https://github.com/ebenito/TiempoUbicacionApp"
+                       Target="_blank"
+                       StartIcon="@Icons.Custom.Brands.GitHub">
                 Ver en GitHub
             </MudButton>
         </MudCardActions>
+    </MudCard>
+
+    <!-- ── Card nueva: descargar y valorar ────────────────────────────── -->
+    <MudCard Elevation="2" Class="p-4">
+        <MudCardHeader>
+            <MudText Typo="Typo.h5" Color="Color.Primary">⬇️ Descargar y valorar</MudText>
+        </MudCardHeader>
+
+        <MudDivider Class="my-2" />
+
+        <MudCardContent>
+            <MudText Typo="Typo.body2" Class="mb-4" Style="color:var(--mud-palette-text-secondary);">
+                Descarga la app gratis desde tu tienda preferida y, si te resulta útil, ¡déjanos una valoración!
+            </MudText>
+
+            <MudStack Spacing="3">
+
+                <!-- Microsoft Store — activo -->
+                <a class="store-btn store-btn-microsoft"
+                   href="https://apps.microsoft.com/detail/9NR9DNFKM0PC"
+                   target="_blank">
+                    <span class="store-btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                            <path d="M11.4 2H2v9.4h9.4V2zM22 2h-9.4v9.4H22V2zM11.4 12.6H2V22h9.4v-9.4zM22 12.6h-9.4V22H22v-9.4z" />
+                        </svg>
+                    </span>
+                    <span class="store-btn-text">
+                        <span class="store-btn-sub">Disponible en</span>
+                        <span class="store-btn-name">Microsoft Store</span>
+                    </span>
+                    <span class="store-btn-arrow">→</span>
+                </a>
+
+                <!-- Google Play — próximamente -->
+                <div class="store-btn store-btn-coming">
+                    <span class="store-btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                            <path d="M3.18 23.76c.3.17.64.22.97.15L14.84 12 3.18.09C2.85.02 2.5.07 2.2.24A1.5 1.5 0 0 0 1.5 1.5v21a1.5 1.5 0 0 0 .68 1.26zM17.15 9.29l2.55-1.47-2.97-5.14-2.6 2.6 3.02 3.01zM6.89 12l8.77 8.77 2.97-5.14-2.55-1.47L6.89 12zm10.26-1.29-3.02 3.02 2.6 2.6 2.97-5.15-2.55-1.47z" />
+                        </svg>
+                    </span>
+                    <span class="store-btn-text">
+                        <span class="store-btn-sub">Próximamente en</span>
+                        <span class="store-btn-name">Google Play</span>
+                    </span>
+                    <MudChip T="string" Text="Próximamente" Size="Size.Small" Variant="Variant.Outlined" Style="margin-left:auto;" />
+                </div>
+
+                <!-- Amazon Appstore — próximamente -->
+                <div class="store-btn store-btn-coming">
+                    <span class="store-btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                            <path d="M13.96 12.93c-.57.55-1.35.88-2.19.88-1.03 0-1.95-.38-2.65-1A3.77 3.77 0 0 1 7.9 9.97c0-1.05.4-2 1.05-2.7C9.65 6.56 10.6 6.15 11.6 6.1c.84 0 1.63.3 2.23.8v-.64h1.4v5.37c0 .47.18.62.44.62.08 0 .16-.02.23-.05l.12 1.06c-.22.1-.5.15-.84.15-.7 0-1.14-.37-1.22-1.08zm-.15-1.33V9.14a1.91 1.91 0 0 0-1.5-.68c-.54 0-1.03.2-1.4.54-.37.34-.58.82-.58 1.35s.2.99.56 1.34c.36.35.85.55 1.38.55.57 0 1.1-.22 1.54-.64zM.5 17.92C3.13 20.03 6.65 21.5 11 21.5c2.93 0 6.43-.85 8.97-2.88.43-.35.05-.84-.43-.63C17 19.38 14.07 20 11.3 20c-4.1 0-7.52-1.4-10.23-3.5-.35-.27-.84.1-.57.42zm21.43-1.6c-.3-.38-1.9-.18-2.63-.09-.22.03-.25-.16-.05-.3 1.28-.9 3.39-.64 3.64-.34.24.3-.07 2.43-1.27 3.44-.18.16-.36.07-.28-.12.27-.68.88-2.21.59-2.59z" />
+                        </svg>
+                    </span>
+                    <span class="store-btn-text">
+                        <span class="store-btn-sub">Próximamente en</span>
+                        <span class="store-btn-name">Amazon Appstore</span>
+                    </span>
+                    <MudChip T="string" Text="Próximamente" Size="Size.Small" Variant="Variant.Outlined" Style="margin-left:auto;" />
+                </div>
+
+            </MudStack>
+        </MudCardContent>
     </MudCard>
 
 </MudContainer>

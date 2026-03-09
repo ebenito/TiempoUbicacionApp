@@ -1,34 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Tiempo y Ubicación</title>
     <base href="/" />
+
+    <!-- Fuentes: DM Sans (UI) + JetBrains Mono (datos numéricos) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- MudBlazor -->
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+
+    <!-- App styles -->
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="TiempoUbicacionApp.styles.css" />
+
     <link rel="icon" href="data:,">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="scripts.js"></script>
     <script src="shareInterop.js"></script>
 </head>
 
 <body>
-
     <div class="status-bar-safe-area"></div>
-
     <div id="app">Cargando...</div>
 
     <div id="blazor-error-ui">
-        Ocurrió un error no controlado en la App.
+        Ocurrió un error no controlado.
         <a href="" class="reload">Recargar</a>
         <a class="dismiss">🗙</a>
     </div>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
-
 </body>
-
 </html>

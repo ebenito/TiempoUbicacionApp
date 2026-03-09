@@ -1,9 +1,9 @@
-﻿@using TiempoUbicacionApp.Services
+@using TiempoUbicacionApp.Services
 @inherits LayoutComponentBase
 @inject ThemeService ThemeService
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
-
+@inject IJSRuntime JS
 @implements IDisposable
 
 <MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" DefaultScrollbar="true" />
@@ -13,41 +13,66 @@
 
 <MudLayout class="app-layout">
 
-    <MudAppBar Color="Color.Dark" Elevation="4">
+    <MudAppBar Color="Color.Dark" Elevation="0">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="@ToggleDrawer"
                        Class="transition-all" />
-        <MudText Typo="Typo.h6" Class="ml-2">Tiempo / Ubicación</MudText>
+
+        <!-- Título con punto de acento teal -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="ml-1">
+            <span style="width:7px;height:7px;border-radius:50%;background:#14b8a6;display:inline-block;flex-shrink:0;"></span>
+            <MudText Typo="Typo.h6" Style="color:#f8fafc;font-weight:700;letter-spacing:-.01em;">
+                Tiempo &amp; Ubicación
+            </MudText>
+        </MudStack>
+
         <MudSpacer />
-        <MudTooltip Text="GitHub">
+
+        <MudTooltip Text="Ver en GitHub">
             <MudIconButton Icon="@Icons.Custom.Brands.GitHub"
                            Color="Color.Inherit"
+                           Style="opacity:.75;"
                            Href="https://github.com/ebenito/TiempoUbicacionApp"
                            Target="_blank" />
         </MudTooltip>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen"
-               Elevation="1"
-               Width="260px"
+               Elevation="0"
                ClipMode="DrawerClipMode.Always"
                Anchor="Anchor.Left"
                Variant="DrawerVariant.Temporary">
+
         <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Menú</MudText>
+            <MudText>Navegación</MudText>
         </MudDrawerHeader>
+
         <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Class="nav-link-animation">🏠 Inicio</MudNavLink>
-            <MudNavLink Href="/history" Class="nav-link-animation">📜 Historial</MudNavLink>
-            <MudNavLink Href="/configuracion" Class="nav-link-animation">⚙️ Configuración</MudNavLink>
-            <MudNavLink Href="/about" Class="nav-link-animation">ℹ️ Acerca de</MudNavLink>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Class="nav-link-animation">
+                🏠&nbsp; Inicio
+            </MudNavLink>
+            <MudNavLink Href="/history" Class="nav-link-animation">
+                📜&nbsp; Historial
+            </MudNavLink>
+            <MudNavLink Href="/configuracion" Class="nav-link-animation">
+                ⚙️&nbsp; Configuración
+            </MudNavLink>
+            <MudNavLink Href="/about" Class="nav-link-animation">
+                ℹ️&nbsp; Acerca de
+            </MudNavLink>
         </MudNavMenu>
+
+        <!-- Versión al pie del drawer -->
+        <MudSpacer />
+        <div style="padding:16px;font-size:.72rem;color:rgba(148,163,184,.5);letter-spacing:.05em;text-transform:uppercase;">
+            v1.1.5 · .NET 10 MAUI
+        </div>
     </MudDrawer>
 
     <MudMainContent Class="app-main-content">
-        <MudContainer MaxWidth="MaxWidth.False" Class="p-4">
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -65,16 +90,28 @@
     {
         await ThemeService.InitializeAsync();
         _isDarkMode = ThemeService.IsDarkMode;
-        _theme = ThemeService.GetTheme();
-
+        _theme      = ThemeService.GetTheme();
         ThemeService.OnChange += ThemeChanged;
+        await ApplyDarkClassAsync(_isDarkMode);
     }
 
     private void ThemeChanged(bool isDark)
     {
         _isDarkMode = isDark;
-        _theme = ThemeService.GetTheme();
-        InvokeAsync(StateHasChanged);
+        _theme      = ThemeService.GetTheme();
+        InvokeAsync(async () =>
+        {
+            await ApplyDarkClassAsync(isDark);
+            StateHasChanged();
+        });
+    }
+
+    private async Task ApplyDarkClassAsync(bool isDark)
+    {
+        if (isDark)
+            await JS.InvokeVoidAsync("document.body.classList.add", "app-dark");
+        else
+            await JS.InvokeVoidAsync("document.body.classList.remove", "app-dark");
     }
 
     public void Dispose()
