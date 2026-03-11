@@ -1,4 +1,5 @@
 ﻿@page "/about"
+@using Microsoft.Maui.ApplicationModel
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
 
@@ -12,7 +13,7 @@
 
         <MudCardContent>
             <MudStack Spacing="3">
-                <MudText><strong>🔢 Versión:</strong> 1.1.10</MudText>
+                <MudText><strong>🔢 Versión:</strong> @appVersion</MudText>
                 <MudText><strong>👨‍💻 Desarrollador:</strong> Esteban Benito</MudText>
                 <MudText>
                     <strong>📧 Email:</strong>
@@ -107,3 +108,7 @@
     </MudCard>
 
 </MudContainer>
+
+@code {
+    private string appVersion = $"{AppInfo.Current.VersionString}"; /* .{AppInfo.Current.BuildString} */
+}

@@ -40,9 +40,11 @@
             </div>
             <div class="stat-row">
                 <span class="stat-label">Horario</span>
-                <span class="badge @(isDst ? "badge-teal" : "badge-slate")">
-                    @(isDst ? "🌞 Verano DST" : "❄️ Estándar")
-                </span>
+                <MudTooltip Text='@(isDst ? "Horario de ahorro de luz (verano)" : "Horario estándar (invierno)")'>
+                    <span class="badge @(isDst ? "badge-teal" : "badge-slate")">
+                        @(isDst ? "🌞 Verano DST" : "❄️ Estándar")
+                    </span>
+                </MudTooltip>
             </div>
         </MudCardContent>
     </MudCard>

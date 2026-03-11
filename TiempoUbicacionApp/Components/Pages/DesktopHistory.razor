@@ -87,10 +87,11 @@
                     <span style="font-size:.72rem;color:var(--slate-400);margin-left:4px;">@context.Desfase</span>
                 </MudTd>
                 <MudTd DataLabel="Horario">
-                    <span class="badge @(context.TipoHorario.Contains("verano") ? "badge-teal" : "badge-slate")"
-                          style="font-size:.65rem;">
-                        @(context.TipoHorario.Contains("verano") ? "🌞 DST" : "❄️ STD")
-                    </span>
+                    <MudTooltip Text='@(context.TipoHorario.Contains("verano") ? "Horario de ahorro de luz (verano)" : "Horario estándar (invierno)")'>
+                        <span class="badge @(context.TipoHorario.Contains("verano") ? "badge-teal" : "badge-slate")" style="font-size:.65rem;">
+                            @(context.TipoHorario.Contains("verano") ? "🌞 DST" : "❄️ STD")
+                        </span>
+                    </MudTooltip>
                 </MudTd>
                 <MudTd DataLabel="Lugar">
                     <span style="font-size:.85rem;">@context.Location</span>
