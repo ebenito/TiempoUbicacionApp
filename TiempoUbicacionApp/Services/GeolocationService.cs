@@ -26,6 +26,10 @@ namespace TiempoUbicacionApp.Services
             if (!await EnsureLocationPermissionAsync())
                 return LocationResult.Empty;
 #endif
+#if WINDOWS
+            if (!await EnsureWindowsLocationPermissionAsync())
+                return LocationResult.Empty;
+#endif
 
             Location? location = null;
 
@@ -116,7 +120,32 @@ namespace TiempoUbicacionApp.Services
         }
 #endif
 
-        private static string ConvertToDMS(double coordinate, bool isLatitude)
+        #if WINDOWS
+                private async Task<bool> EnsureWindowsLocationPermissionAsync()
+                {
+                    try
+                    {
+                        var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                        if (status == PermissionStatus.Granted)
+                            return true;
+
+                        status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+                        if (status == PermissionStatus.Granted)
+                            return true;
+
+                        await _alertService.ShowLongToastAsync(
+                            "Permiso de ubicación denegado. Actívalo en Configuración > Privacidad > Ubicación.");
+                        return false;
+                    }
+                    catch (Exception ex)
+                    {
+                        await _alertService.ShowLongToastAsync($"No se puede acceder a la ubicación: {ex.Message}");
+                        return false;
+                    }
+                }
+        #endif
+
+                private static string ConvertToDMS(double coordinate, bool isLatitude)
         {
             var degrees = (int)coordinate;
             var minutes = (int)((coordinate - degrees) * 60);

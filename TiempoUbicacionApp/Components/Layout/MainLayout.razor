@@ -4,6 +4,8 @@
 @inject ISnackbar Snackbar
 @inject IAlertService AlertService
 @inject IJSRuntime JS
+@inject IDialogService DialogService
+@inject RatingService RatingService
 @implements IDisposable
 
 <MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" DefaultScrollbar="true" />
@@ -30,13 +32,32 @@
 
         <MudSpacer />
 
-        <MudTooltip Text="Ver en GitHub">
+@*         <MudTooltip Text="Ver en GitHub">
             <MudIconButton Icon="@Icons.Custom.Brands.GitHub"
                            Color="Color.Inherit"
                            Style="opacity:.75;"
                            Href="https://github.com/ebenito/TiempoUbicacionApp"
                            Target="_blank" />
+        </MudTooltip> *@
+
+        <MudTooltip Text="Visitar Tubkala.com">
+
+            <MudLink Href="https://tubkala.com"
+                     Target="_blank">
+
+                <img src="images/logoTubkala_blanco.png"
+                     alt="Tubkala"
+                     style="
+                        width:38px;
+                        height:38px;
+                        object-fit:contain;
+                        vertical-align:middle;
+                        opacity:.85;" />
+
+            </MudLink>
+
         </MudTooltip>
+
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen"
@@ -61,6 +82,10 @@
             </MudNavLink>
             <MudNavLink Href="/about" Class="nav-link-animation">
                 ℹ️&nbsp; Acerca de
+            </MudNavLink>
+            <MudDivider Class="my-2" />
+            <MudNavLink Class="nav-link-animation" OnClick="ExitAppAsync">
+                🚪&nbsp; Salir
             </MudNavLink>
         </MudNavMenu>
 
@@ -88,17 +113,48 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // ── Tema ────────────────────────────────────────────────────────
         await ThemeService.InitializeAsync();
         _isDarkMode = ThemeService.IsDarkMode;
-        _theme      = ThemeService.GetTheme();
+        _theme = ThemeService.GetTheme();
         ThemeService.OnChange += ThemeChanged;
         await ApplyDarkClassAsync(_isDarkMode);
+
+        // ── Valoración: registrar uso y decidir si mostrar el diálogo ──
+        RatingService.RecordLaunch();
+        if (RatingService.ShouldShowRating())
+        {
+            // Pequeño retardo para que la UI esté completamente renderizada
+            // antes de abrir el diálogo (evita parpadeos en el arranque).
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(2000);
+                await InvokeAsync(ShowRatingDialogAsync);
+            });
+        }
     }
 
+    // ── Diálogo de valoración ────────────────────────────────────────────
+    private async Task ShowRatingDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            CloseButton = false,   // sin X para forzar una decisión consciente
+            CloseOnEscapeKey = false,
+            BackdropClick = false,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<RatingDialog>(string.Empty, options);
+    }
+
+    // ── Tema ─────────────────────────────────────────────────────────────
     private void ThemeChanged(bool isDark)
     {
         _isDarkMode = isDark;
-        _theme      = ThemeService.GetTheme();
+        _theme = ThemeService.GetTheme();
         InvokeAsync(async () =>
         {
             await ApplyDarkClassAsync(isDark);
@@ -117,5 +173,14 @@
     public void Dispose()
     {
         ThemeService.OnChange -= ThemeChanged;
+    }
+
+    private Task ExitAppAsync()
+    {
+        _drawerOpen = false;
+        var window = Application.Current?.Windows.FirstOrDefault();
+        if (window is not null)
+            Application.Current!.CloseWindow(window);
+        return Task.CompletedTask;
     }
 }

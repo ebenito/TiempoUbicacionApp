@@ -358,12 +358,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Maui" Version="14.1.0" />
+        <PackageReference Include="CommunityToolkit.Maui" Version="14.1.1" />
         <PackageReference Include="CommunityToolkit.Maui.Maps" Version="4.0.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.51" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.51" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.60" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.7" />
-        <PackageReference Include="MudBlazor" Version="9.3.0" />
+        <PackageReference Include="MudBlazor" Version="9.4.0" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
         <PackageReference Include="System.Windows.Extensions" Version="10.0.7" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />

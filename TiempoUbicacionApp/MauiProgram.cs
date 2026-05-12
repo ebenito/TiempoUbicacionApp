@@ -20,7 +20,8 @@ namespace TiempoUbicacionApp
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
-                .UseMauiCommunityToolkitMaps(Environment.GetEnvironmentVariable("MAPS_API_KEY") ?? string.Empty)
+                .UseMauiCommunityToolkitMaps(
+                    Environment.GetEnvironmentVariable("MAPS_API_KEY") ?? string.Empty)
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -35,8 +36,12 @@ namespace TiempoUbicacionApp
             builder.Services.AddSingleton<LocationDatabaseService>();
             builder.Services.AddSingleton<App>();
 
-            // ── BackupService centralizado  ──
+            // ── BackupService centralizado ───────────────────────────────
             builder.Services.AddSingleton<BackupService>();
+
+            // ── RatingService ────────────────────────────────────────────
+            // Singleton: un único contador de usos en toda la sesión.
+            builder.Services.AddSingleton<RatingService>();
 
             // ── HttpClient con IHttpClientFactory ────────────────────────
             // Mejor gestión del pool de conexiones TCP.
@@ -51,8 +56,10 @@ namespace TiempoUbicacionApp
             builder.Services.AddMudServices();
 
             // ── Servicios de plataforma ──────────────────────────────────
+
             // Método 1: registro específico de plataforma (IFeedbackService)
             builder.Services.AddPlatformServices();
+
 
             // Método 2: IAlertService diferente por plataforma
 #if WINDOWS

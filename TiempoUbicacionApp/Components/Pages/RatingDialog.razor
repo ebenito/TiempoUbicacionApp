@@ -1,0 +1,173 @@
+@using TiempoUbicacionApp.Services
+@inject RatingService RatingService
+@inject IDialogService DialogService
+
+@* ═══════════════════════════════════════════════════════════════════
+   RatingDialog — Diálogo de valoración en dos pasos:
+     Paso 1: "¿Te gusta la app?"   → Sí / No gracias
+     Paso 2: "¿Nos dejas una reseña?" → Valorar / Más tarde / No preguntar
+   ═══════════════════════════════════════════════════════════════════ *@
+
+<MudDialog>
+
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <span style="font-size:1.4rem;">@(_step == 1 ? "😊" : "⭐")</span>
+            <MudText Typo="Typo.h6" Style="font-weight:700;">
+                @(_step == 1 ? "¿Te gusta la app?" : "¡Gracias por tu apoyo!")
+            </MudText>
+        </MudStack>
+    </TitleContent>
+
+    <DialogContent>
+        @if (_step == 1)
+        {
+            <!-- ── PASO 1: ¿Te gusta? ─────────────────────────────────── -->
+            <MudText Style="color:var(--mud-palette-text-secondary);line-height:1.6;">
+                Hemos trabajado duro para que <strong>Tiempo &amp; Ubicación</strong>
+                sea útil y agradable. ¿La estás disfrutando?
+            </MudText>
+        }
+        else
+        {
+            <!-- ── PASO 2: ¿Dejar valoración? ────────────────────────── -->
+            <MudText Style="color:var(--mud-palette-text-secondary);line-height:1.6;">
+                Una valoración en la tienda nos ayuda a llegar a más usuarios
+                y a mejorar la aplicación. Solo tarda unos segundos. 🙏
+            </MudText>
+
+            @if (_showStorePicker)
+            {
+                <!-- Solo se muestra si no pudimos detectar la tienda en Android -->
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">
+                    ¿Desde dónde descargaste la app?
+                </MudText>
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="@(_selectedStore == RatingService.AndroidStore.Play ? Variant.Filled : Variant.Outlined)"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               OnClick="@(() => _selectedStore = RatingService.AndroidStore.Play)">
+                        🟢 Google Play
+                    </MudButton>
+                    <MudButton Variant="@(_selectedStore == RatingService.AndroidStore.Amazon ? Variant.Filled : Variant.Outlined)"
+                               Color="Color.Warning"
+                               Size="Size.Small"
+                               OnClick="@(() => _selectedStore = RatingService.AndroidStore.Amazon)">
+                        🟠 Amazon
+                    </MudButton>
+                </MudStack>
+            }
+        }
+    </DialogContent>
+
+    <DialogActions>
+        @if (_step == 1)
+        {
+            <!-- Paso 1: Sí / No gracias -->
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       OnClick="OnNoThanks"
+                       Style="font-weight:600;">
+                No, gracias
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="OnLikeIt"
+                       Style="font-weight:600;min-width:90px;">
+                ¡Sí! 👍
+            </MudButton>
+        }
+        else
+        {
+            <!-- Paso 2: Valorar / Más tarde / No volver a preguntar -->
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       OnClick="OnNeverAsk"
+                       Style="font-size:.75rem;color:var(--mud-palette-text-disabled);">
+                No volver a preguntar
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       OnClick="OnLater"
+                       Style="font-weight:600;">
+                Más tarde
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="OnRate"
+                       StartIcon="@Icons.Material.Filled.Star"
+                       Style="font-weight:600;">
+                Valorar
+            </MudButton>
+        }
+    </DialogActions>
+
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private int _step = 1;
+    private bool _showStorePicker;
+    private RatingService.AndroidStore _selectedStore = RatingService.AndroidStore.Unknown;
+
+    // ── Paso 1 ───────────────────────────────────────────────────────────
+    private void OnLikeIt()
+    {
+        // Si es Android y no pudimos detectar la tienda, mostramos el picker
+        if (DeviceInfo.Current.Platform == DevicePlatform.Android)
+        {
+            _selectedStore = RatingService.GetAndroidStore();
+            _showStorePicker = _selectedStore == RatingService.AndroidStore.Unknown;
+        }
+        _step = 2;
+    }
+
+    private void OnNoThanks()
+    {
+        // No le gusta → no volvemos a preguntar
+        RatingService.MarkAsNeverAsk();
+        MudDialog.Close(DialogResult.Cancel());
+    }
+
+    // ── Paso 2 ───────────────────────────────────────────────────────────
+    private async Task OnRate()
+    {
+        // Si el usuario eligió la tienda manualmente, la guardamos
+        if (_showStorePicker && _selectedStore != RatingService.AndroidStore.Unknown)
+            RatingService.SetAndroidStore(_selectedStore);
+
+        RatingService.MarkAsRated();
+
+        var url = RatingService.GetStoreUrl(_selectedStore);
+        try
+        {
+            await Launcher.Default.OpenAsync(url);
+        }
+        catch
+        {
+            // Fallback web si el esquema nativo falla
+            var webUrl = DeviceInfo.Current.Platform == DevicePlatform.Android
+                ? $"https://play.google.com/store/apps/details?id=com.tubkala.tiempoubicacionapp"
+                : "https://apps.microsoft.com/detail/9NR9DNFKM0PC";
+            await Launcher.Default.OpenAsync(webUrl);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void OnLater()
+    {
+        RatingService.PostponeWeek();
+        MudDialog.Close(DialogResult.Cancel());
+    }
+
+    private void OnNeverAsk()
+    {
+        RatingService.MarkAsNeverAsk();
+        MudDialog.Close(DialogResult.Cancel());
+    }
+}
