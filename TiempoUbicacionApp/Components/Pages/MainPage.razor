@@ -7,6 +7,7 @@
 @inject GeolocationService GeolocationService
 @inject LocationDatabaseService DatabaseService
 @inject ISettingsService SettingsService
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="py-4">
@@ -109,10 +110,10 @@
                 <!-- Mapa -->
                 @if (!string.IsNullOrWhiteSpace(mapUrl))
                 {
-                    <div class="map-container">
+                    <div id="map-container" class="map-container">
                         <iframe width="100%" height="230" frameborder="0"
                                 src="@mapUrl" allowfullscreen
-                                style="display:block;border:none;">
+                                style="display:block;border:none;min-height:230px;">
                         </iframe>
                     </div>
                 }
@@ -121,7 +122,7 @@
     }
 
     <!-- ── ACCIONES PRINCIPALES ───────────────────────────────────────── -->
-    <MudStack Row="true" Spacing="2">
+    <MudStack Row="true" Spacing="2" id="actions-bar">
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth
@@ -163,6 +164,16 @@
     private CancellationTokenSource _autoRefreshCts = new();
     private int _currentRefreshInterval = -1;
     private int _isAutoRefreshRunning   = 0;
+    private bool _mapRendered = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!string.IsNullOrWhiteSpace(mapUrl) && !_mapRendered)
+        {
+            _mapRendered = true;
+            await JS.InvokeVoidAsync("fitMapHeight", "map-container", "#actions-bar", 230, 24);
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -292,6 +303,7 @@
                 lat                = location.Lat.ToString(culture);
                 lon                = location.Lng.ToString(culture);
                 mapUrl             = await GetMapUrlAsync(lat, lon, 15, true) ?? string.Empty;
+                _mapRendered       = false;
                 await InvokeAsync(StateHasChanged);
                 if (showMessages) await AlertService.ShowToastAsync("Ubicación actualizada.");
                 return true;
@@ -350,11 +362,11 @@
 
     private async Task SetDefaultLocationAsync()
     {
-        locationName       = "Casto Celtíbero, Olmeda de Cobeta";
-        formattedLatitude  = "40° 51' 33\" N";
-        formattedLongitude = "02° 12' 32\" O";
+        locationName       = "El Cardoso de la Sierra";
+        formattedLatitude  = "41° 05' 35\" N";
+        formattedLongitude = "03° 27' 55\" O";
         zona               = TimeZoneService.GetStandardGMTZone();
         isDst              = TimeZoneService.IsDaylightSavingNow();
-        mapUrl             = await GetMapUrlAsync("40.8591", "-2.2088", 15, true) ?? string.Empty;
+        mapUrl             = await GetMapUrlAsync("41.09305555555556", "-3.46527777777777", 15, true) ?? string.Empty;
     }
 }

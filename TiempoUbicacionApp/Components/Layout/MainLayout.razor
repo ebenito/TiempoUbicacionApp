@@ -92,7 +92,7 @@
         <!-- Versión al pie del drawer -->
         <MudSpacer />
         <div style="padding:16px;font-size:.72rem;color:rgba(148,163,184,.5);letter-spacing:.05em;text-transform:uppercase;">
-            v1.1.5 · .NET 10 MAUI
+            ver.: @appVersion · .NET 10 MAUI
         </div>
     </MudDrawer>
 
@@ -110,6 +110,7 @@
     private bool _drawerOpen = false;
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+    private string appVersion = $"{AppInfo.Current.VersionString}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -178,9 +179,16 @@
     private Task ExitAppAsync()
     {
         _drawerOpen = false;
+#if ANDROID
+        // FinishAndRemoveTask cierra la Activity y la elimina del reciente de tareas,
+        // equivalente a un cierre completo desde el botón de apps recientes.
+        if (Platform.CurrentActivity is Android.App.Activity activity)
+            activity.FinishAndRemoveTask();
+#else
         var window = Application.Current?.Windows.FirstOrDefault();
         if (window is not null)
             Application.Current!.CloseWindow(window);
+#endif
         return Task.CompletedTask;
     }
 }

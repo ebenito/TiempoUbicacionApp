@@ -8,7 +8,7 @@
 
 	<Identity Name="64068EstebanBenito.TiempoUbicacin"
 			  Publisher="CN=861769EB-74FC-4B39-BFED-DFA2CEF5D924"
-			  Version="1.1.12.0" />
+			  Version="1.1.17.0" />
 
 	<mp:PhoneIdentity PhoneProductId="cd10cae3-4aef-4944-8502-559f5b6faeaf"
 					  PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
