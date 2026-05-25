@@ -149,5 +149,24 @@ namespace TiempoUbicacionApp.Helpers
 
             return $"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik&marker={latS}%2C{lonS}";
         }
+
+        /// <summary>
+        /// Convierte una coordenada decimal a formato grados°minutos'segundos" DIR
+        /// usando el mismo estilo que el resto de la aplicación.
+        /// Ejemplos: 40.859167 → "40°51'33\" N"  |  -2.196667 → "2°11'48\" O"
+        /// </summary>
+        public static string DecimalToDms(double coordinate, bool isLatitude)
+        {
+            int degrees = (int)Math.Abs(coordinate);
+            double minutesDouble = (Math.Abs(coordinate) - degrees) * 60;
+            int minutes = (int)minutesDouble;
+            int seconds = (int)((minutesDouble - minutes) * 60);
+
+            string direction = isLatitude
+                ? (coordinate >= 0 ? "N" : "S")
+                : (coordinate >= 0 ? "E" : "O");
+
+            return $"{degrees}°{minutes}'{seconds}\" {direction}";
+        }
     }
 }

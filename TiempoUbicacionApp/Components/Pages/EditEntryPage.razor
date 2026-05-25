@@ -1,6 +1,8 @@
 @using TiempoUbicacionApp.Models
 @using TiempoUbicacionApp.Services
 @inject LocationDatabaseService DatabaseService
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 @if (_entry is null)
 {
@@ -38,25 +40,33 @@
                               FullWidth="true" />
             </MudItem>
 
-            <MudItem xs="12" sm="6">
+            <MudItem xs="12" sm="3">
                 <MudTextField @bind-Value="_entry.HoraUtc"
                               Label="Hora UTC"
                               Variant="Variant.Outlined"
                               FullWidth="true" />
             </MudItem>
 
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_entry.Desfase"
-                              Label="Desfase"
-                              Variant="Variant.Outlined"
-                              FullWidth="true" />
+            <MudItem xs="12" sm="3">
+                <MudSelect @bind-Value="_entry.Desfase"
+                           Label="Desfase (UTC offset)"
+                           Variant="Variant.Outlined"
+                           FullWidth="true">
+                    @foreach (var offset in _utcOffsets)
+                    {
+                        <MudSelectItem Value="@offset">@offset</MudSelectItem>
+                    }
+                </MudSelect>
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_entry.TipoHorario"
-                              Label="Tipo de horario"
-                              Variant="Variant.Outlined"
-                              FullWidth="true" />
+                <MudSelect @bind-Value="_entry.TipoHorario"
+                           Label="Tipo de horario"
+                           Variant="Variant.Outlined"
+                           FullWidth="true">
+                    <MudSelectItem Value="@_horarioVerano">🌞 Horario de verano (DST)</MudSelectItem>
+                    <MudSelectItem Value="@_horarioInvierno">❄️ Horario estándar (invierno)</MudSelectItem>
+                </MudSelect>
             </MudItem>
 
             <MudItem xs="12">
@@ -77,7 +87,18 @@
                 <MudTextField @bind-Value="_entry.Longitude"
                               Label="Longitud"
                               Variant="Variant.Outlined"
-                              FullWidth="true" />
+                              FullWidth="true"
+                              @oninput="OnCoordsTextChanged" />
+            </MudItem>
+
+            <!-- Mapa interactivo -->
+            <MudItem xs="12">
+                <MudText Typo="Typo.subtitle2" Style="margin-bottom:6px;color:var(--mud-palette-text-secondary);">
+                    🗺️ Arrastre el pin o pulse en el mapa para actualizar las coordenadas
+                </MudText>
+                <div id="@_mapContainerId"
+                     style="width:100%;height:300px;border-radius:10px;border:1px solid var(--mud-palette-divider);overflow:hidden;">
+                </div>
             </MudItem>
 
         </MudGrid>
@@ -113,13 +134,8 @@
                 💾 Guardar
             </MudButton>
 
-            <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                       OnClick="OnCancelClick">
-                ✖ Cancelar
-            </MudButton>
-
             <MudButton Variant="Variant.Filled" Color="Color.Success"
-                       OnClick="OnExitClick">
+                       OnClick="OnCancelClick">
                 🚪 Salir
             </MudButton>
         }
@@ -140,11 +156,62 @@
     private bool _saving;
     private bool _saved;
 
+    // Valores canónicos de TipoHorario
+    private const string _horarioVerano   = "Horario de verano";
+    private const string _horarioInvierno = "Horario estándar";
+
+    // Lista completa de UTC offsets oficiales actuales
+    private static readonly IReadOnlyList<string> _utcOffsets = new[]
+    {
+        "−12:00",
+        "−11:00",
+        "−10:00",
+        "−09:30",
+        "−09:00",
+        "−08:00",
+        "−07:00",
+        "−06:00",
+        "−05:00",
+        "−04:00",
+        "−03:30",
+        "−03:00",
+        "−02:00",
+        "−01:00",
+        "±00:00",
+        "+01:00",
+        "+02:00",
+        "+03:00",
+        "+03:30",
+        "+04:00",
+        "+04:30",
+        "+05:00",
+        "+05:30",
+        "+05:45",
+        "+06:00",
+        "+06:30",
+        "+07:00",
+        "+08:00",
+        "+08:45",
+        "+09:00",
+        "+09:30",
+        "+10:00",
+        "+10:30",
+        "+11:00",
+        "+12:00",
+        "+12:45",
+        "+13:00",
+        "+14:00",
+    };
+
+    // Mapa
+    private string _mapContainerId = "edit-map";
+    private DotNetObjectReference<EditEntryPage>? _dotNetRef;
+    private bool _mapInitialized;
+
     protected override void OnParametersSet()
     {
-        if (Entry is not null)
+        if (Entry is not null && Entry.Id != _entry?.Id)
         {
-            // Copia defensiva para no mutar el objeto original hasta confirmar
             _entry = new LocationEntry
             {
                 Id          = Entry.Id,
@@ -153,14 +220,48 @@
                 HoraLocal   = Entry.HoraLocal,
                 HoraUtc     = Entry.HoraUtc,
                 Desfase     = Entry.Desfase,
-                TipoHorario = Entry.TipoHorario,
+                TipoHorario = NormalizeTipoHorario(Entry.TipoHorario),
                 Location    = Entry.Location,
                 Latitude    = Entry.Latitude,
                 Longitude   = Entry.Longitude,
                 Zona        = Entry.Zona
             };
             _saved = false;
+            _mapInitialized = false;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_entry is not null && !_mapInitialized)
+        {
+            if (TryGetDecimalCoords(out var lat, out var lon))
+            {
+                _dotNetRef ??= DotNetObjectReference.Create(this);
+                try
+                {
+                    await JS.InvokeVoidAsync("initEditMap", _mapContainerId, lat, lon, _dotNetRef);
+                    _mapInitialized = true;
+                }
+                catch { /* Leaflet no disponible aún — se reintenta en el siguiente render */ }
+            }
+        }
+    }
+
+    /// <summary>Llamado desde JS cuando el usuario arrastra el pin o hace clic en el mapa.</summary>
+    [JSInvokable]
+    public void OnMarkerMoved(double lat, double lon)
+    {
+        if (_entry is null) return;
+        _entry.Latitude  = Helpers.CoordinatesHelper.DecimalToDms(lat, isLatitude: true);
+        _entry.Longitude = Helpers.CoordinatesHelper.DecimalToDms(lon, isLatitude: false);
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Reinicia el mapa cuando el usuario edita las coordenadas a mano.</summary>
+    private void OnCoordsTextChanged(ChangeEventArgs _)
+    {
+        _mapInitialized = false;   // fuerza reinit del mapa en el siguiente render
     }
 
     private async Task OnSaveClick()
@@ -179,7 +280,6 @@
         try
         {
             await DatabaseService.UpdateEntryAsync(_entry);
-            // Actualizar también el objeto original
             if (Entry is not null)
             {
                 Entry.FechaActual = _entry.FechaActual;
@@ -193,6 +293,7 @@
                 Entry.Zona        = _entry.Zona;
             }
             _saved = true;
+            StateHasChanged();
             await OnSaved.InvokeAsync();
         }
         catch (Exception ex)
@@ -211,8 +312,32 @@
         await OnBack.InvokeAsync();
     }
 
-    private async Task OnExitClick()
+    // ── Helpers
+
+    private bool TryGetDecimalCoords(out double lat, out double lon)
     {
-        await OnBack.InvokeAsync();
+        lat = lon = 0;
+        if (_entry is null) return false;
+        return Helpers.CoordinatesHelper.TryParseCoordinate(_entry.Latitude, out lat)
+            && Helpers.CoordinatesHelper.TryParseCoordinate(_entry.Longitude, out lon);
+    }
+
+    /// <summary>
+    /// Normaliza los valores almacenados en BD (que pueden contener "verano", "DST", etc.)
+    /// a uno de los dos valores canónicos que usa el combo.
+    /// </summary>
+    private static string NormalizeTipoHorario(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return _horarioInvierno;
+        var lower = value.ToLowerInvariant();
+        return (lower.Contains("verano") || lower.Contains("dst") || lower.Contains("summer"))
+            ? _horarioVerano
+            : _horarioInvierno;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("destroyEditMap", _mapContainerId); } catch { }
+        _dotNetRef?.Dispose();
     }
 }
