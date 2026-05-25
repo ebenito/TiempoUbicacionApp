@@ -52,12 +52,13 @@ else
     <ul style="list-style:none;padding:0;margin:0">
         @foreach (var e in @Entries)
         {
-            <li style="@GetCardInlineStyle()">
+            var isSelected = _selectedEntry?.Id == e.Id;
+            <li style="@GetCardInlineStyle()" @onclick="() => _selectedEntry = isSelected ? null : e">
                 <div style="font-weight:600;margin-bottom:6px">@e.FechaActual</div>
                 <div>🕒 Local: @e.HoraLocal · 🌍 UTC: @e.HoraUtc · (@e.Desfase)</div>
                 <div>⏱ @e.TipoHorario</div>
                 <div>📍 @e.Location</div>
-               
+
                 @{var mapUrl = CoordinatesHelper.GetGoogleMapsUrl(e.Latitude, e.Longitude);}
                 @if (!string.IsNullOrEmpty(mapUrl))
                 {
@@ -66,6 +67,22 @@ else
                 else
                 {
                     <div>🧭 @e.Latitude, @e.Longitude</div>
+                }
+
+                @if (isSelected)
+                {
+                    <div style="display:flex;gap:8px;margin-top:10px;">
+                        <button style="padding:6px 14px;border-radius:8px;background:#1976d2;color:white;border:none;font-size:.85rem;"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OnEdit.InvokeAsync(e)">
+                            ✏️ Editar
+                        </button>
+                        <button style="padding:6px 14px;border-radius:8px;background:#c62828;color:white;border:none;font-size:.85rem;"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => OnDelete.InvokeAsync(e)">
+                            🗑 Borrar
+                        </button>
+                    </div>
                 }
             </li>
         }
@@ -78,10 +95,13 @@ else
     [Parameter] public EventCallback OnBackup { get; set; }
     [Parameter] public EventCallback OnRestore { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
+    [Parameter] public EventCallback<LocationEntry> OnEdit { get; set; }
+    [Parameter] public EventCallback<LocationEntry> OnDelete { get; set; }
 
     private List<LocationEntry> entries = new();
     private bool _loading = true;
     private string _error = "";
+    private LocationEntry? _selectedEntry;
 
     protected override async Task OnInitializedAsync()
     {

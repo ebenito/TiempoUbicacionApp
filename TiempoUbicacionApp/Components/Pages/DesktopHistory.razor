@@ -74,6 +74,7 @@
                 <MudTh>Horario</MudTh>
                 <MudTh>Lugar</MudTh>
                 <MudTh>Coordenadas</MudTh>
+                <MudTh>Acciones</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Fecha">
@@ -119,6 +120,20 @@
                         <span style="color:var(--slate-400);font-size:.8rem;">—</span>
                     }
                 </MudTd>
+                <MudTd DataLabel="Acciones">
+                    <MudStack Row="true" Spacing="1">
+                        <MudTooltip Text="Editar">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary" Size="Size.Small"
+                                           OnClick="() => OnEdit.InvokeAsync(context)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Borrar">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error" Size="Size.Small"
+                                           OnClick="() => OnDelete.InvokeAsync(context)" />
+                        </MudTooltip>
+                    </MudStack>
+                </MudTd>
             </RowTemplate>
         </MudTable>
     }
@@ -130,6 +145,8 @@
     [Parameter] public EventCallback OnBackup  { get; set; }
     [Parameter] public EventCallback OnRestore { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
+    [Parameter] public EventCallback<LocationEntry> OnEdit   { get; set; }
+    [Parameter] public EventCallback<LocationEntry> OnDelete { get; set; }
 
     private bool   _loading = true;
     private string _error   = string.Empty;

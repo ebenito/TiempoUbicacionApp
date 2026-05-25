@@ -7,24 +7,35 @@
 @inject BackupService BackupService
 @inject LocationDatabaseService LocationDatabaseService
 
-@if (_isAndroid)
+@if (_editingEntry is not null)
+{
+    <EditEntryPage Entry="_editingEntry"
+                   OnBack="OnEditBack"
+                   OnSaved="OnEntrySaved" />
+}
+else if (_isAndroid)
 {
     <AndroidHistory Entries="entries"
                     OnBackup="DoBackup"
                     OnRestore="DoRestore"
-                    OnRefresh="RefreshHistory" />
+                    OnRefresh="RefreshHistory"
+                    OnEdit="OnEditRequested"
+                    OnDelete="OnDeleteRequested" />
 }
 else
 {
     <DesktopHistory Entries="entries"
                     OnBackup="DoBackup"
                     OnRestore="DoRestore"
-                    OnRefresh="RefreshHistory" />
+                    OnRefresh="RefreshHistory"
+                    OnEdit="OnEditRequested"
+                    OnDelete="OnDeleteRequested" />
 }
 
 @code {
     private bool _isAndroid;
     private List<LocationEntry> entries = new();
+    private LocationEntry? _editingEntry;
 
     protected override void OnInitialized()
     {
@@ -69,5 +80,49 @@ else
         await LoadEntriesAsync();
         StateHasChanged();
         await AlertService.ShowToastAsync("🔄 Histórico actualizado");
+    }
+
+    // ── Editar ────────────────────────────────────────────────────────────
+
+    private void OnEditRequested(LocationEntry entry)
+    {
+        _editingEntry = entry;
+        StateHasChanged();
+    }
+
+    private async Task OnEditBack()
+    {
+        _editingEntry = null;
+        StateHasChanged();
+    }
+
+    private async Task OnEntrySaved()
+    {
+        await LoadEntriesAsync();
+    }
+
+    // ── Borrar ────────────────────────────────────────────────────────────
+
+    private async Task OnDeleteRequested(LocationEntry entry)
+    {
+        bool confirmed = await Application.Current!.MainPage!.DisplayAlert(
+            "Borrar registro",
+            $"¿Deseas eliminar el registro del {entry.FechaActual}? Esta acción no se puede deshacer.",
+            "Sí, borrar",
+            "Cancelar");
+
+        if (!confirmed) return;
+
+        try
+        {
+            await LocationDatabaseService.DeleteEntryAsync(entry);
+            await LoadEntriesAsync();
+            StateHasChanged();
+            await AlertService.ShowToastAsync("🗑 Registro eliminado.");
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowToastAsync($"Error al borrar: {ex.Message}");
+        }
     }
 }

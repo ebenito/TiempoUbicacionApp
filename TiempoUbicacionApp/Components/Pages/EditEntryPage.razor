@@ -1,0 +1,218 @@
+@using TiempoUbicacionApp.Models
+@using TiempoUbicacionApp.Services
+@inject LocationDatabaseService DatabaseService
+
+@if (_entry is null)
+{
+    <p>No hay registro seleccionado.</p>
+    return;
+}
+
+<div style="display:flex;flex-direction:column;height:100%;padding:16px;box-sizing:border-box;">
+
+    <!-- Cabecera -->
+    <MudText Typo="Typo.h5" Color="Color.Primary" Style="margin-bottom:16px">✏️ Editar registro</MudText>
+
+    @if (_saved)
+    {
+        <MudAlert Severity="Severity.Success" Style="margin-bottom:12px;border-radius:8px;">
+            ✅ Cambios guardados correctamente.
+        </MudAlert>
+    }
+
+    <!-- Formulario -->
+    <div style="flex:1;overflow-y:auto;">
+        <MudGrid Spacing="2">
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.FechaActual"
+                              Label="Fecha"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.HoraLocal"
+                              Label="Hora local"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.HoraUtc"
+                              Label="Hora UTC"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.Desfase"
+                              Label="Desfase"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.TipoHorario"
+                              Label="Tipo de horario"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_entry.Location"
+                              Label="Lugar"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.Latitude"
+                              Label="Latitud"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_entry.Longitude"
+                              Label="Longitud"
+                              Variant="Variant.Outlined"
+                              FullWidth="true" />
+            </MudItem>
+
+        </MudGrid>
+    </div>
+
+    <!-- Botones inferiores -->
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+
+        @if (!_saved)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="OnSaveClick" Disabled="_saving">
+                @if (_saving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right:6px;" />
+                }
+                💾 Guardar
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       OnClick="OnCancelClick">
+                ✖ Cancelar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="OnSaveClick" Disabled="_saving">
+                @if (_saving)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right:6px;" />
+                }
+                💾 Guardar
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       OnClick="OnCancelClick">
+                ✖ Cancelar
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Success"
+                       OnClick="OnExitClick">
+                🚪 Salir
+            </MudButton>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public LocationEntry? Entry { get; set; }
+
+    /// <summary>Callback para volver al histórico. Se invoca al cancelar o salir tras guardar.</summary>
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    /// <summary>Callback invocado tras guardar correctamente, para que el padre refresque la lista.</summary>
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private LocationEntry? _entry;
+    private bool _saving;
+    private bool _saved;
+
+    protected override void OnParametersSet()
+    {
+        if (Entry is not null)
+        {
+            // Copia defensiva para no mutar el objeto original hasta confirmar
+            _entry = new LocationEntry
+            {
+                Id          = Entry.Id,
+                Date        = Entry.Date,
+                FechaActual = Entry.FechaActual,
+                HoraLocal   = Entry.HoraLocal,
+                HoraUtc     = Entry.HoraUtc,
+                Desfase     = Entry.Desfase,
+                TipoHorario = Entry.TipoHorario,
+                Location    = Entry.Location,
+                Latitude    = Entry.Latitude,
+                Longitude   = Entry.Longitude,
+                Zona        = Entry.Zona
+            };
+            _saved = false;
+        }
+    }
+
+    private async Task OnSaveClick()
+    {
+        if (_entry is null) return;
+
+        bool confirmed = await Application.Current!.MainPage!.DisplayAlert(
+            "Guardar cambios",
+            "¿Deseas guardar los cambios en este registro?",
+            "Sí, guardar",
+            "Cancelar");
+
+        if (!confirmed) return;
+
+        _saving = true;
+        try
+        {
+            await DatabaseService.UpdateEntryAsync(_entry);
+            // Actualizar también el objeto original
+            if (Entry is not null)
+            {
+                Entry.FechaActual = _entry.FechaActual;
+                Entry.HoraLocal   = _entry.HoraLocal;
+                Entry.HoraUtc     = _entry.HoraUtc;
+                Entry.Desfase     = _entry.Desfase;
+                Entry.TipoHorario = _entry.TipoHorario;
+                Entry.Location    = _entry.Location;
+                Entry.Latitude    = _entry.Latitude;
+                Entry.Longitude   = _entry.Longitude;
+                Entry.Zona        = _entry.Zona;
+            }
+            _saved = true;
+            await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            await Application.Current!.MainPage!.DisplayAlert("Error", $"No se pudo guardar: {ex.Message}", "OK");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task OnCancelClick()
+    {
+        _saved = false;
+        await OnBack.InvokeAsync();
+    }
+
+    private async Task OnExitClick()
+    {
+        await OnBack.InvokeAsync();
+    }
+}

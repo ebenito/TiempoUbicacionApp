@@ -77,5 +77,17 @@ namespace TiempoUbicacionApp.Services
                             .OrderByDescending(c => c.Id)
                             .ToListAsync();
         }
+
+        public async Task UpdateEntryAsync(LocationEntry entry)
+        {
+            await EnsureTableAsync();
+            await _db.UpdateAsync(entry);
+        }
+
+        public async Task DeleteEntryAsync(LocationEntry entry)
+        {
+            await EnsureTableAsync();
+            await _db.DeleteAsync(entry);
+        }
     }
 }
