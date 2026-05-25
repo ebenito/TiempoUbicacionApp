@@ -32,7 +32,7 @@
 
         <MudSpacer />
 
-@*         <MudTooltip Text="Ver en GitHub">
+        @* <MudTooltip Text="Ver en GitHub">
             <MudIconButton Icon="@Icons.Custom.Brands.GitHub"
                            Color="Color.Inherit"
                            Style="opacity:.75;"
@@ -42,9 +42,7 @@
 
         <MudTooltip Text="Visitar Tubkala.com">
 
-            <MudLink Href="https://tubkala.com"
-                     Target="_blank">
-
+            <span @onclick="OpenTubkala" style="cursor:pointer;display:inline-flex;align-items:center;">
                 <img src="images/logoTubkala_blanco.png"
                      alt="Tubkala"
                      style="
@@ -53,8 +51,7 @@
                         object-fit:contain;
                         vertical-align:middle;
                         opacity:.85;" />
-
-            </MudLink>
+            </span>
 
         </MudTooltip>
 
@@ -174,6 +171,11 @@
     public void Dispose()
     {
         ThemeService.OnChange -= ThemeChanged;
+    }
+
+    private async Task OpenTubkala()
+    {
+        await Launcher.Default.OpenAsync(new Uri("https://tubkala.com"));
     }
 
     private Task ExitAppAsync()

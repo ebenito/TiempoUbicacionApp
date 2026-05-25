@@ -110,5 +110,7 @@
 </MudContainer>
 
 @code {
-    private string appVersion = $"{AppInfo.Current.VersionString}"; /* .{AppInfo.Current.BuildString} */
+    private string appVersion = string.IsNullOrWhiteSpace(AppInfo.Current.BuildString) || AppInfo.Current.BuildString == "0"
+        ? AppInfo.Current.VersionString
+        : $"{AppInfo.Current.VersionString}.{AppInfo.Current.BuildString}";
 }
