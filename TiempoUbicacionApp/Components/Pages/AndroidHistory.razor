@@ -145,7 +145,7 @@ else
 
             if (!File.Exists(dbPath))
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                await DialogHelper.ShowAlertAsync("Error", "No se encontró la base de datos.");
                 return;
             }
 
@@ -157,7 +157,7 @@ else
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo compartir la BD: {ex.Message}", "OK");
+            await DialogHelper.ShowAlertAsync("Error", $"No se pudo compartir la BD: {ex.Message}");
         }
     }
 
@@ -206,7 +206,7 @@ else
             if (!isSqlite)
             {
                 File.Delete(tempFile);
-                await Application.Current.MainPage.DisplayAlert("Restaurar", "El archivo seleccionado no parece una base de datos SQLite válida.", "OK");
+                await DialogHelper.ShowAlertAsync("Restaurar", "El archivo seleccionado no parece una base de datos SQLite válida.");
                 return;
             }
 
@@ -235,11 +235,11 @@ else
             // 10) Limpiar temporal
             try { File.Delete(tempFile); } catch { /* ignore */ }
 
-            await Application.Current.MainPage.DisplayAlert("Restaurar", "La base de datos se ha restaurado correctamente.", "OK");
+            await DialogHelper.ShowAlertAsync("Restaurar", "La base de datos se ha restaurado correctamente.");
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo restaurar la BD: {ex.Message}", "OK");
+            await DialogHelper.ShowAlertAsync("Error", $"No se pudo restaurar la BD: {ex.Message}");
         }
     }
 
@@ -251,7 +251,7 @@ else
 
             if (!File.Exists(dbPath))
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "No se encontró la base de datos.", "OK");
+                await DialogHelper.ShowAlertAsync("Error", "No se encontró la base de datos.");
                 return;
             }
 
@@ -278,7 +278,7 @@ else
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Error", $"No se pudo enviar la BD: {ex.Message}", "OK");
+            await DialogHelper.ShowAlertAsync("Error", $"No se pudo enviar la BD: {ex.Message}");
         }
     }
 

@@ -268,7 +268,7 @@
     {
         if (_entry is null) return;
 
-        bool confirmed = await Application.Current!.MainPage!.DisplayAlert(
+        bool confirmed = await Helpers.DialogHelper.ShowConfirmAsync(
             "Guardar cambios",
             "¿Deseas guardar los cambios en este registro?",
             "Sí, guardar",
@@ -298,7 +298,7 @@
         }
         catch (Exception ex)
         {
-            await Application.Current!.MainPage!.DisplayAlert("Error", $"No se pudo guardar: {ex.Message}", "OK");
+            await Helpers.DialogHelper.ShowAlertAsync("Error", $"No se pudo guardar: {ex.Message}");
         }
         finally
         {

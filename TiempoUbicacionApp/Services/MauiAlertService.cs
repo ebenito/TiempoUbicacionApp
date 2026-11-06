@@ -1,6 +1,7 @@
 ﻿using MudBlazor;
 using MudBlazor.Utilities;
 using System.Diagnostics;
+using TiempoUbicacionApp.Helpers;
 
 namespace TiempoUbicacionApp.Services
 {
@@ -77,9 +78,9 @@ namespace TiempoUbicacionApp.Services
     }
 
 
-    private async Task ShowDisplayAlertAsync(string message)
+    private static Task ShowDisplayAlertAsync(string message)
         {
-            await Application.Current.MainPage.DisplayAlert("Tiempo / Ubicación", message, "OK");
+            return DialogHelper.ShowAlertAsync("Tiempo / Ubicación", message);
         }
     }
 }
