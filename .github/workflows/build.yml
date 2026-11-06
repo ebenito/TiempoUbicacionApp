@@ -32,5 +32,7 @@ jobs:
       - name: Build Android
         run: dotnet build TiempoUbicacionApp/TiempoUbicacionApp.csproj -f net10.0-android --configuration Release --no-restore
 
+      # Sin --no-restore: en Release el destino Windows (MSIX) fija RuntimeIdentifier win-x64
+      # y necesita restaurar el runtime pack correspondiente (NETSDK1112 si se omite)
       - name: Build Windows
-        run: dotnet build TiempoUbicacionApp/TiempoUbicacionApp.csproj -f net10.0-windows10.0.26100.0 --configuration Release --no-restore
+        run: dotnet build TiempoUbicacionApp/TiempoUbicacionApp.csproj -f net10.0-windows10.0.26100.0 --configuration Release
