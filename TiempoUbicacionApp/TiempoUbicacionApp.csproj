@@ -4,7 +4,7 @@
         <TargetFrameworks>net10.0-android;</TargetFrameworks>
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.26100.0</TargetFrameworks>
         <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
-        <!-- <TargetFrameworks>$(TargetFrameworks);net9.0-tizen</TargetFrameworks> -->
+        <!-- <TargetFrameworks>$(TargetFrameworks);net10.0-tizen</TargetFrameworks> -->
 
         <!-- Note for MacCatalyst:
             The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
@@ -358,15 +358,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommunityToolkit.Maui" Version="14.1.1" />
+        <PackageReference Include="CommunityToolkit.Maui" Version="15.0.1" />
         <PackageReference Include="CommunityToolkit.Maui.Maps" Version="4.0.0" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.70" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.70" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
-        <PackageReference Include="MudBlazor" Version="9.4.0" />
-        <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-        <PackageReference Include="System.Windows.Extensions" Version="10.0.8" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.120" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.120" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
+        <PackageReference Include="MudBlazor" Version="9.12.0" />
+        <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+        <PackageReference Include="System.Windows.Extensions" Version="10.0.14" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
     </ItemGroup>
 
     <ItemGroup>
